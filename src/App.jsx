@@ -64,7 +64,7 @@ function AppPanels() {
         <Panel
           minimizable
           title='Viewport'
-          minWidth={8}
+          minWidth={7}
           minHeight={10}
           onMinimize={viewport.minimize}
         >
