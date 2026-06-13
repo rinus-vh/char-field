@@ -60,7 +60,7 @@ export async function exportDownload({ source, settings, aspectRatio, longEdge, 
   const ctx = canvas.getContext('2d')
   fillBackground(ctx, settings.backgroundColor)
 
-  const stage = buildSubjectStage(frame, mask, outW, outH, settings.rotation)
+  const stage = buildSubjectStage(frame, mask, outW, outH, settings.rotation, settings.imageFit ?? 'contain')
   const fontFamily =
     getComputedStyle(document.documentElement).getPropertyValue('--font-family-alt').trim() ||
     'monospace'

@@ -12,6 +12,11 @@ import { GLYPH_SET_OPTIONS } from '@/features/pipeline/glyphSets.js'
 
 import styles from './SettingsContent.module.css'
 
+const VIEWPORT_FIT_OPTIONS = [
+  { value: 'contain', label: 'Fit' },
+  { value: 'cover', label: 'Cover' },
+]
+
 const ASPECT_OPTIONS = [
   { value: 'source', label: 'Source' },
   { value: '1:1', label: 'Square 1:1' },
@@ -44,6 +49,15 @@ export function SettingsContent({ onOpenExport }) {
                 value={settings.aspectRatio}
                 onChange={v => update({ aspectRatio: v })}
                 options={ASPECT_OPTIONS}
+              />
+            </div>
+          </PanelContainerSettingsRow>
+          <PanelContainerSettingsRow label='Image fit'>
+            <div className={styles.dropdownSlot}>
+              <Dropdown
+                value={settings.imageFit}
+                onChange={v => update({ imageFit: v })}
+                options={VIEWPORT_FIT_OPTIONS}
               />
             </div>
           </PanelContainerSettingsRow>

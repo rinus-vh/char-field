@@ -57,7 +57,7 @@ export async function resolveMask(frame, { maskMode, maskTolerance }) {
 export function drawCharField(targetCanvas, frame, mask, settings) {
   const {
     aspectRatio, rotation, backgroundColor, textColor,
-    cellSize, contrast, invert, glyphSet, fontFamily,
+    cellSize, contrast, invert, glyphSet, fontFamily, imageFit = 'contain',
   } = settings
 
   const { width: outW, height: outH } = getOutputDimensions(aspectRatio, frame.width, frame.height)
@@ -67,7 +67,7 @@ export function drawCharField(targetCanvas, frame, mask, settings) {
   const ctx = targetCanvas.getContext('2d')
   fillBackground(ctx, backgroundColor)
 
-  const stage = buildSubjectStage(frame, mask, outW, outH, rotation)
+  const stage = buildSubjectStage(frame, mask, outW, outH, rotation, imageFit)
   renderGlyphs(ctx, stage, { cellSize, contrast, invert, glyphSet, textColor, fontFamily })
 }
 
@@ -82,9 +82,9 @@ export function drawCharField(targetCanvas, frame, mask, settings) {
  * @returns {{ cols: number, rows: number, lines: string[] }}
  */
 export function computeCharField(frame, mask, settings) {
-  const { aspectRatio, rotation, cellSize, contrast, invert, glyphSet } = settings
+  const { aspectRatio, rotation, cellSize, contrast, invert, glyphSet, imageFit = 'contain' } = settings
   const { width: outW, height: outH } = getOutputDimensions(aspectRatio, frame.width, frame.height)
-  const stage = buildSubjectStage(frame, mask, outW, outH, rotation)
+  const stage = buildSubjectStage(frame, mask, outW, outH, rotation, imageFit)
   return computeGlyphGrid(stage, { cellSize, contrast, invert, glyphSet })
 }
 

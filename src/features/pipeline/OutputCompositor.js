@@ -58,16 +58,17 @@ function buildMaskedFrame(frame, mask) {
 
 /**
  * Composes the masked subject into an output-sized stage canvas, applying
- * rotation (0/90/180/270) and a contain-fit.
+ * rotation (0/90/180/270) and either a contain-fit or cover-crop.
  *
  * @param {import('./types.js').Frame} frame
  * @param {import('./types.js').Mask} mask
  * @param {number} outW
  * @param {number} outH
- * @param {number} rotation  degrees, multiple of 90
+ * @param {number} rotation   degrees, multiple of 90
+ * @param {'contain'|'cover'} imageFit  contain = letterbox, cover = crop to fill
  * @returns {HTMLCanvasElement}
  */
-export function buildSubjectStage(frame, mask, outW, outH, rotation) {
+export function buildSubjectStage(frame, mask, outW, outH, rotation, imageFit = 'contain') {
   const masked = buildMaskedFrame(frame, mask)
 
   const stage = document.createElement('canvas')
@@ -80,7 +81,9 @@ export function buildSubjectStage(frame, mask, outW, outH, rotation) {
   const swap = rot === 90 || rot === 270
   const effW = swap ? frame.height : frame.width
   const effH = swap ? frame.width : frame.height
-  const fit = Math.min(outW / effW, outH / effH)
+  const fit = imageFit === 'cover'
+    ? Math.max(outW / effW, outH / effH)
+    : Math.min(outW / effW, outH / effH)
 
   ctx.save()
   ctx.translate(outW / 2, outH / 2)

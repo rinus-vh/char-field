@@ -9,6 +9,7 @@ import { autoTextColor } from '@/features/pipeline/colorUtils.js'
 export const DEFAULTS = {
   // Output
   aspectRatio: '1:1',
+  imageFit: 'contain',
   rotation: 0,
   // Background & text
   backgroundColor: '#f5e003',
@@ -25,7 +26,7 @@ export const DEFAULTS = {
 }
 
 export const SETTINGS_SECTIONS = {
-  output: ['aspectRatio', 'rotation'],
+  output: ['aspectRatio', 'imageFit', 'rotation'],
   color: ['backgroundColor', 'textColorAuto', 'textColorManual'],
   masking: ['maskMode', 'maskTolerance'],
   glyphs: ['cellSize', 'contrast', 'invert', 'glyphSet'],
