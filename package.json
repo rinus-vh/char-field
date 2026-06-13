@@ -4,16 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node scripts/setup-hooks.js && vite",
+    "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "lint:css": "stylelint \"src/**/*.css\" --max-warnings 0",
     "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
-    "source:local": "node scripts/use-local-sources.js && pnpm install",
-    "source:remote": "node scripts/use-remote-sources.js && pnpm install",
-    "postinstall": "node scripts/setup-hooks.js"
+    "hooks:install": "6njp-install-hooks",
+    "source:local": "6njp-source local && pnpm install",
+    "source:remote": "6njp-source remote && pnpm install"
   },
   "dependencies": {
     "@6njp/prototype-library": "link:../prototype-library",
@@ -42,10 +42,5 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "packageManager": "pnpm@11.0.8",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
-  }
+  "packageManager": "pnpm@11.0.8"
 }
