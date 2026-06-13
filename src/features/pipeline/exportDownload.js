@@ -6,6 +6,10 @@ import { resolveMask } from '@/features/pipeline/renderPipeline.js'
 import { buildSubjectStage, fillBackground } from '@/features/pipeline/OutputCompositor.js'
 import { renderGlyphs } from '@/features/pipeline/GlyphRenderer.js'
 
+// Must match OutputCompositor's OUTPUT_LONG_EDGE so the exported grid density is
+// identical to what the user sees in the viewport.
+const PREVIEW_LONG_EDGE = 1000
+
 function parseRatio(ratio) {
   if (ratio === 'source') return null
   const [w, h] = ratio.split(':').map(Number)
@@ -13,7 +17,7 @@ function parseRatio(ratio) {
   return [w, h]
 }
 
-function getExportDimensions(ratio, sourceW, sourceH, longEdge) {
+function getDimensions(ratio, sourceW, sourceH, longEdge) {
   const parsed = parseRatio(ratio)
   let rw = parsed ? parsed[0] : sourceW
   let rh = parsed ? parsed[1] : sourceH
@@ -42,12 +46,12 @@ export async function exportDownload({ source, settings, aspectRatio, longEdge, 
     maskTolerance: settings.maskTolerance,
   })
 
-  const { width: outW, height: outH } = getExportDimensions(
-    aspectRatio,
-    frame.width,
-    frame.height,
-    longEdge,
-  )
+  // Full-resolution canvas — this is what gets downloaded.
+  const { width: outW, height: outH } = getDimensions(aspectRatio, frame.width, frame.height, longEdge)
+
+  // Preview-resolution dims — used only to lock grid density to what the viewport shows.
+  // Without this, a 4× resolution export would produce a 4× denser character grid.
+  const { width: previewW, height: previewH } = getDimensions(aspectRatio, frame.width, frame.height, PREVIEW_LONG_EDGE)
 
   const canvas = document.createElement('canvas')
   canvas.width = outW
@@ -68,14 +72,23 @@ export async function exportDownload({ source, settings, aspectRatio, longEdge, 
     glyphSet: settings.glyphSet,
     textColor: effectiveTextColor,
     fontFamily,
+    gridWidth: previewW,
+    gridHeight: previewH,
   })
 
   const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'
-  const dataUrl = canvas.toDataURL(mimeType, quality)
-
   const ext = format === 'jpeg' ? 'jpg' : 'png'
-  const a = document.createElement('a')
-  a.href = dataUrl
-  a.download = `char-field-${longEdge}.${ext}`
-  a.click()
+
+  await new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error('toBlob failed')); return }
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `char-field-${longEdge}.${ext}`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      resolve()
+    }, mimeType, quality)
+  })
 }

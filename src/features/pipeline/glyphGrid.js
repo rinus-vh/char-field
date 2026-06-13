@@ -24,18 +24,8 @@ function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)) }
  *   contrast: number,
  *   invert: boolean,
  *   glyphSet: string,
- * }} settings
- * @returns {{ cols: number, rows: number, lines: string[] }}
- */
-/**
- * @param {HTMLCanvasElement} stage  subject pixels at output resolution (bg transparent)
- * @param {{
- *   cellSize: number,
- *   contrast: number,
- *   invert: boolean,
- *   glyphSet: string,
- *   gridWidth?: number,   optional override for cols/rows calculation (e.g. preview size)
- *   gridHeight?: number,  so export at 4× resolution keeps the same grid density
+ *   gridWidth?: number,   optional: locks cols/rows to a reference size (e.g. preview dims)
+ *   gridHeight?: number,  so a 4× export keeps the same visual density as the viewport
  * }} settings
  * @returns {{ cols: number, rows: number, lines: string[] }}
  */

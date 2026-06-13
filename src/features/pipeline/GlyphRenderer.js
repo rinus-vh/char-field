@@ -17,8 +17,8 @@ import { computeGlyphGrid, CELL_ASPECT } from '@/features/pipeline/glyphGrid.js'
  * }} settings
  */
 export function renderGlyphs(ctx, stage, settings) {
-  const { cellSize, contrast, invert, glyphSet, textColor, fontFamily } = settings
-  const { cols, rows, lines } = computeGlyphGrid(stage, { cellSize, contrast, invert, glyphSet })
+  const { cellSize, contrast, invert, glyphSet, textColor, fontFamily, gridWidth, gridHeight } = settings
+  const { cols, rows, lines } = computeGlyphGrid(stage, { cellSize, contrast, invert, glyphSet, gridWidth, gridHeight })
   if (cols < 1 || rows < 1) return
 
   const ow = ctx.canvas.width

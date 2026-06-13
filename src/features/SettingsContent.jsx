@@ -139,7 +139,7 @@ export function SettingsContent({ onOpenExport }) {
         <Slider
           value={settings.cellSize}
           onChange={v => update({ cellSize: v })}
-          min={6}
+          min={4}
           max={28}
           step={1}
           label='Scale'
@@ -154,16 +154,6 @@ export function SettingsContent({ onOpenExport }) {
         />
       </Section>
 
-      <Section title='Export'>
-        <Button
-          label='Export settings'
-          variant='outline'
-          icon={Download}
-          onClick={onOpenExport}
-          layoutClassName={styles.fullButtonLayout}
-        />
-      </Section>
-
       {source && (
         <Section title='Image'>
           <Button
@@ -175,6 +165,16 @@ export function SettingsContent({ onOpenExport }) {
           />
         </Section>
       )}
+
+      <Section title='Export'>
+        <Button
+          label='Export settings'
+          variant='solid'
+          icon={Download}
+          onClick={onOpenExport}
+          layoutClassName={styles.fullButtonLayout}
+        />
+      </Section>
 
       <Modal
         isOpen={confirmOpen}
@@ -205,6 +205,7 @@ function Section({ title, children, dirty = false, onReset }) {
     <div className={styles.componentSection}>
       <div className={styles.sectionHeader}>
         <LabelUppercaseSm layoutClassName={styles.sectionTitleLayout}>{title}</LabelUppercaseSm>
+
         {dirty && onReset && (
           <button
             type='button'
