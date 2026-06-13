@@ -1,0 +1,108 @@
+.component {
+  height: 100%;
+  padding: var(--size-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-16);
+  overflow-y: auto;
+}
+
+.componentSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-8);
+  padding-bottom: var(--size-16);
+  border-bottom: 1px solid color-mix(in srgb, var(--color) 10%, transparent);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  & > .sectionBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-8);
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  & > .sectionTitleLayout {
+    opacity: 0.5;
+  }
+}
+
+.resetButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-20);
+  height: var(--size-20);
+  border: none;
+  border-radius: var(--radius-4);
+  background: none;
+  color: var(--color);
+  cursor: pointer;
+  opacity: 0.45;
+  transition-property: opacity, background-color;
+  transition-duration: var(--duration-150);
+
+  &:hover {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--color) 10%, transparent);
+  }
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-24);
+  height: var(--size-24);
+  border-radius: var(--radius-4);
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--color) 20%, transparent);
+  color: var(--color);
+  cursor: pointer;
+  opacity: 0.7;
+  transition-property: opacity, background-color;
+  transition-duration: var(--duration-150);
+
+  &:hover {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--color) 8%, transparent);
+  }
+}
+
+.dropdownSlot {
+  /* stylelint-disable-next-line custom/layout-related-properties */
+  min-width: var(--size-150);
+}
+
+.swatch {
+  width: var(--size-24);
+  height: var(--size-24);
+  border-radius: var(--radius-4);
+  border: 1px solid color-mix(in srgb, var(--color) 20%, transparent);
+}
+
+.fullButtonLayout {
+  width: 100%;
+}
+
+.hint {
+  font-size: var(--font-size-12);
+  opacity: 0.55;
+  line-height: var(--line-height-120);
+}
+
+
+.confirmButtons {
+  display: flex;
+  gap: var(--size-8);
+  justify-content: flex-end;
+}

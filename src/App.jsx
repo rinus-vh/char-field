@@ -1,52 +1,89 @@
-import { Grid, Header, MinimizedPanelsMenu, MinimizedPanelsProvider, Panel, usePanelManager } from '@6njp/prototype-library'
-import { getThemeVariables } from '@6njp/prototype-library/machinery'
+import { Type } from 'lucide-react'
+import {
+  Grid, Header, Panel,
+  MinimizedPanelsProvider, MinimizedPanelsMenu, usePanelManager,
+} from '@6njp/prototype-library'
+import { getThemeVariables, ThemeProvider } from '@6njp/prototype-library/machinery'
 
-import { ControlsOverview } from '@/pages/ControlsOverview/ControlsOverview.jsx'
-import { DesignOverview } from '@/pages/DesignOverview/DesignOverview.jsx'
+import { CharFieldProvider } from '@/features/contexts/CharFieldContext.jsx'
+import { ViewportContent } from '@/features/ViewportContent.jsx'
+import { SettingsContent } from '@/features/SettingsContent.jsx'
+import { ExportPanelContent } from '@/features/panels/ExportPanelContent.jsx'
 
 import styles from './App.module.css'
 
 export default function App() {
   const [isDark, setIsDark] = React.useState(true)
-  const themeName = isDark ? 'dark' : 'light'
-  const themeVariables = getThemeVariables(themeName)
+  const theme = isDark ? 'dark' : 'light'
 
   return (
-    <MinimizedPanelsProvider>
-      <main style={themeVariables} className={styles.app}>
-        <Header onToggleTheme={() => setIsDark(d => !d)} layoutClassName={styles.headerLayout} {...{ isDark }} />
+    <ThemeProvider {...{ theme }}>
+      <CharFieldProvider>
+        <MinimizedPanelsProvider>
+          <main style={getThemeVariables(theme)} className={styles.app}>
+            <Header
+              title='Char Field'
+              logo={Type}
+              onToggleTheme={() => setIsDark(prev => !prev)}
+              layoutClassName={styles.headerLayout}
+              {...{ isDark }}
+            />
 
-        <Grid layoutClassName={styles.gridLayout}>
-          <AppPanels />
-        </Grid>
+            <Grid layoutClassName={styles.gridLayout}>
+              <AppPanels />
+            </Grid>
 
-        <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
-      </main>
-    </MinimizedPanelsProvider>
+            <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
+          </main>
+        </MinimizedPanelsProvider>
+      </CharFieldProvider>
+    </ThemeProvider>
   )
 }
 
 function AppPanels() {
-  const design   = usePanelManager('design',    'Design')
-  const controls = usePanelManager('controls',  'Controls')
-  const prototype = usePanelManager('prototype', 'Prototype')
+  const viewport = usePanelManager('viewport', 'Viewport')
+  const settings = usePanelManager('settings', 'Settings')
+  const exportPanel = usePanelManager('export', 'Export', { defaultVisible: false })
 
   return (
     <>
-      {design.visible && (
-        <Panel title='Design' minWidth={8} minHeight={8} minimizable onMinimize={design.minimize}>
-          <DesignOverview />
+      {settings.visible && (
+        <Panel
+          minimizable
+          title='Settings'
+          minWidth={5}
+          minHeight={10}
+          onMinimize={settings.minimize}
+        >
+          <SettingsContent onOpenExport={exportPanel.open} />
         </Panel>
       )}
 
-      {controls.visible && (
-        <Panel title='Controls' minWidth={8} minHeight={8} minimizable onMinimize={controls.minimize}>
-          <ControlsOverview />
+      {viewport.visible && (
+        <Panel
+          minimizable
+          title='Viewport'
+          minWidth={8}
+          minHeight={10}
+          onMinimize={viewport.minimize}
+        >
+          <ViewportContent />
         </Panel>
       )}
 
-      {prototype.visible && (
-        <Panel title='Prototype' minWidth={6} minHeight={7} minimizable onMinimize={prototype.minimize} />
+      {exportPanel.visible && (
+        <Panel
+          closeable
+          minimizable
+          title='Export'
+          minWidth={4}
+          minHeight={6}
+          onClose={exportPanel.close}
+          onMinimize={exportPanel.minimize}
+        >
+          <ExportPanelContent />
+        </Panel>
       )}
     </>
   )

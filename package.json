@@ -16,16 +16,17 @@
     "postinstall": "node scripts/setup-hooks.js"
   },
   "dependencies": {
-    "@6njp/prototype-library": "github:rinus-vh/prototype-library",
+    "@6njp/prototype-library": "link:../prototype-library",
     "@floating-ui/react": "^0.27.19",
+    "@mediapipe/tasks-vision": "^0.10.35",
     "@use-gesture/react": "^10.3.1",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@6njp/eslint-plugin": "github:rinus-vh/plugins#path:eslint-plugin",
-    "@6njp/stylelint-plugin": "github:rinus-vh/plugins#path:stylelint-plugin",
+    "@6njp/eslint-plugin": "link:../plugins/eslint-plugin",
+    "@6njp/stylelint-plugin": "link:../plugins/stylelint-plugin",
     "@eslint/js": "^9.39.4",
     "@stylistic/eslint-plugin": "^2.13.0",
     "@vitejs/plugin-react": "^6.0.2",
