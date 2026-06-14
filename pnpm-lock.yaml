@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@6njp/prototype-library':
         specifier: github:rinus-vh/prototype-library
-        version: git+https://git@github.com:rinus-vh/prototype-library.git#7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: git+https://git@github.com:rinus-vh/prototype-library.git#ae65d9ec252d889abf1eacee169c8c0e855dad8e(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@floating-ui/react':
         specifier: ^0.27.19
         version: 0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -32,10 +32,10 @@ importers:
     devDependencies:
       '@6njp/eslint-plugin':
         specifier: github:rinus-vh/plugins#path:eslint-plugin
-        version: git+https://git@github.com:rinus-vh/plugins.git#494c5aec6296210624627cb1807fa53a7f09294b&path:eslint-plugin
+        version: git+https://git@github.com:rinus-vh/plugins.git#bc810c8f691b7ddbab7b6e0d40dce7f28c400d66&path:eslint-plugin
       '@6njp/stylelint-plugin':
         specifier: github:rinus-vh/plugins#path:stylelint-plugin
-        version: git+https://git@github.com:rinus-vh/plugins.git#494c5aec6296210624627cb1807fa53a7f09294b&path:stylelint-plugin(typescript@6.0.3)
+        version: git+https://git@github.com:rinus-vh/plugins.git#bc810c8f691b7ddbab7b6e0d40dce7f28c400d66&path:stylelint-plugin(typescript@6.0.3)
       '@eslint/js':
         specifier: ^9.39.4
         version: 9.39.4
@@ -72,12 +72,12 @@ importers:
 
 packages:
 
-  '@6njp/eslint-plugin@git+https://git@github.com:rinus-vh/plugins.git#494c5aec6296210624627cb1807fa53a7f09294b&path:eslint-plugin':
-    resolution: {commit: 494c5aec6296210624627cb1807fa53a7f09294b, path: eslint-plugin, repo: git@github.com:rinus-vh/plugins.git, type: git}
+  '@6njp/eslint-plugin@git+https://git@github.com:rinus-vh/plugins.git#bc810c8f691b7ddbab7b6e0d40dce7f28c400d66&path:eslint-plugin':
+    resolution: {commit: bc810c8f691b7ddbab7b6e0d40dce7f28c400d66, path: eslint-plugin, repo: git@github.com:rinus-vh/plugins.git, type: git}
     version: 1.0.0
 
-  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1':
-    resolution: {commit: 7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1, repo: git@github.com:rinus-vh/prototype-library.git, type: git}
+  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#ae65d9ec252d889abf1eacee169c8c0e855dad8e':
+    resolution: {commit: ae65d9ec252d889abf1eacee169c8c0e855dad8e, repo: git@github.com:rinus-vh/prototype-library.git, type: git}
     version: 0.0.1
     engines: {node: '>=22.0.0'}
     hasBin: true
@@ -88,8 +88,8 @@ packages:
       react: '>=19.0.0'
       react-dom: '>=19.0.0'
 
-  '@6njp/stylelint-plugin@git+https://git@github.com:rinus-vh/plugins.git#494c5aec6296210624627cb1807fa53a7f09294b&path:stylelint-plugin':
-    resolution: {commit: 494c5aec6296210624627cb1807fa53a7f09294b, path: stylelint-plugin, repo: git@github.com:rinus-vh/plugins.git, type: git}
+  '@6njp/stylelint-plugin@git+https://git@github.com:rinus-vh/plugins.git#bc810c8f691b7ddbab7b6e0d40dce7f28c400d66&path:stylelint-plugin':
+    resolution: {commit: bc810c8f691b7ddbab7b6e0d40dce7f28c400d66, path: stylelint-plugin, repo: git@github.com:rinus-vh/plugins.git, type: git}
     version: 1.1.0
 
   '@babel/code-frame@7.29.7':
@@ -2461,7 +2461,7 @@ packages:
 
 snapshots:
 
-  '@6njp/eslint-plugin@git+https://git@github.com:rinus-vh/plugins.git#494c5aec6296210624627cb1807fa53a7f09294b&path:eslint-plugin':
+  '@6njp/eslint-plugin@git+https://git@github.com:rinus-vh/plugins.git#bc810c8f691b7ddbab7b6e0d40dce7f28c400d66&path:eslint-plugin':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/eslint-parser': 7.29.7(@babel/core@7.29.7)(eslint@8.57.1)
@@ -2481,7 +2481,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#ae65d9ec252d889abf1eacee169c8c0e855dad8e(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@floating-ui/react': 0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@use-gesture/react': 10.3.1(react@19.2.7)
@@ -2489,7 +2489,7 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
-  '@6njp/stylelint-plugin@git+https://git@github.com:rinus-vh/plugins.git#494c5aec6296210624627cb1807fa53a7f09294b&path:stylelint-plugin(typescript@6.0.3)':
+  '@6njp/stylelint-plugin@git+https://git@github.com:rinus-vh/plugins.git#bc810c8f691b7ddbab7b6e0d40dce7f28c400d66&path:stylelint-plugin(typescript@6.0.3)':
     dependencies:
       '@stylistic/stylelint-plugin': 3.1.3(stylelint@17.13.0(typescript@6.0.3))
       fs-extra: 11.3.5

@@ -12,7 +12,7 @@ import { CELL_ASPECT } from '@/features/pipeline/glyphGrid.js'
 
 import styles from './CharFieldViewport.module.css'
 
-const MIN_SCALE = 0.25
+const MIN_SCALE = 1
 const MAX_SCALE = 20
 
 // Paints a single video frame to the output canvas. Either the glyph render
@@ -56,7 +56,7 @@ function paintVideoFrame(canvas, frame, mask, s, fontFamily, textColor, showRaw)
 }
 
 export function CharFieldViewport() {
-  const { source, settings, effectiveTextColor } = useCharField()
+  const { source, settings, committedSettings, effectiveTextColor, zoom, setZoom, resetZoom } = useCharField()
   const videoTimeline = useVideoTimeline()
 
   // ── Non-video frame state ──────────────────────────────────────────────────
@@ -65,17 +65,17 @@ export function CharFieldViewport() {
   const [status, setStatus] = useState('idle')
 
   // ── Transform / UI state ───────────────────────────────────────────────────
-  const [transform,   setTransform]   = useState({ x: 0, y: 0, scale: 1 })
-  const [dragging,    setDragging]    = useState(false)
-  const [buttonFaded, setButtonFaded] = useState(false)
-  const [holdActive,  setHoldActive]  = useState(false)
+  // zoom (scale) lives in CharFieldContext so the settings panel can control it.
+  // Pan (x/y) stays local — the settings panel doesn't need it.
+  const [pan,      setPan]      = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+  const [holdActive, setHoldActive] = useState(false)
 
-  const containerRef    = useRef(null)
-  const rawCanvasRef    = useRef(null)
-  const videoCanvasRef  = useRef(null)
-  const fadeTimerRef    = useRef(null)
-  const holdTimerRef    = useRef(null)
-  const holdOriginRef   = useRef(null)
+  const containerRef   = useRef(null)
+  const rawCanvasRef   = useRef(null)
+  const videoCanvasRef = useRef(null)
+  const holdTimerRef   = useRef(null)
+  const holdOriginRef  = useRef(null)
 
   const { maskMode, maskTolerance, imageFit } = settings
   const isVideo = source?.kind === 'video'
@@ -211,19 +211,55 @@ export function CharFieldViewport() {
     return () => cancelAnimationFrame(raf)
   }, [isVideo])
 
+  // ── Live mask re-compute for video (paused, mask settings being tweaked) ────
+  // When the user drags the tolerance slider or switches mask mode, the committed
+  // mask settings haven't changed yet so the pre-extracted masks still use the
+  // old values. Re-mask just the current frame with the live settings so the
+  // viewport shows an instant preview before the full re-extraction fires.
+  const [liveVideoMask, setLiveVideoMask] = useState(null)
+
+  useEffect(() => {
+    const liveMaskMode  = settings.maskMode
+    const liveTolerance = settings.maskTolerance
+    const sameMaskMode  = liveMaskMode  === committedSettings.maskMode
+    const sameTolerance = liveTolerance === committedSettings.maskTolerance
+
+    if (!isVideo || playing || (sameMaskMode && sameTolerance)) {
+      setLiveVideoMask(null)
+      return
+    }
+
+    const frame = preFrames[videoFrameIndex] ?? null
+    if (!frame) { setLiveVideoMask(null); return }
+
+    let active = true
+    resolveMask(frame, { maskMode: liveMaskMode, maskTolerance: liveTolerance })
+      .then(({ mask }) => { if (active) setLiveVideoMask(mask) })
+    return () => { active = false }
+  }, [
+    isVideo, playing,
+    settings.maskMode, settings.maskTolerance,
+    committedSettings.maskMode, committedSettings.maskTolerance,
+    videoFrameIndex, preFrames,
+  ])
+
   // ── Video PAUSED / scrubbing / tweaking: single-frame paint via effect ──────
   useEffect(() => {
     if (!isVideo || playing) return
     const f = preFrames[videoFrameIndex] ?? null
-    const m = preMasks[videoFrameIndex] ?? null
+    // Prefer the live-remasked version when mask settings are being tweaked.
+    const m = liveVideoMask ?? preMasks[videoFrameIndex] ?? null
     paintVideoFrame(videoCanvasRef.current, f, m, effectiveSettings, fontFamily, effectiveTextColor, showingRaw)
   }, [
-    isVideo, playing, videoFrameIndex, preFrames, preMasks,
+    isVideo, playing, videoFrameIndex, preFrames, preMasks, liveVideoMask,
     effectiveSettings, effectiveTextColor, showingRaw, fontFamily,
   ])
 
-  // Reset transform when image fit changes.
-  useEffect(() => { setTransform({ x: 0, y: 0, scale: 1 }) }, [imageFit])
+  // Reset pan + zoom when image fit changes.
+  useEffect(() => { setPan({ x: 0, y: 0 }); resetZoom() }, [imageFit, resetZoom])
+
+  // When zoom is snapped back to 1 (e.g. from settings panel), also reset pan.
+  useEffect(() => { if (zoom === 1) setPan({ x: 0, y: 0 }) }, [zoom])
 
   // ── Raw-input canvas for IMAGE / LIVEFEED (SVG path) ────────────────────────
   useEffect(() => {
@@ -285,49 +321,55 @@ export function CharFieldViewport() {
   }
   useEffect(() => () => clearTimeout(holdTimerRef.current), [])
 
-  // ── Zoom button ────────────────────────────────────────────────────────────
-  function scheduleButtonFade() {
-    setButtonFaded(false)
-    clearTimeout(fadeTimerRef.current)
-    fadeTimerRef.current = setTimeout(() => setButtonFaded(true), 1500)
+  // Returns the max pan offset for the current zoom so content can't be dragged
+  // beyond the point where the viewport edge aligns with the content edge.
+  function panBounds(z) {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return { maxX: Infinity, maxY: Infinity }
+    return {
+      maxX: (rect.width  * (z - 1)) / 2,
+      maxY: (rect.height * (z - 1)) / 2,
+    }
   }
-  function resetTransform() {
-    setTransform({ x: 0, y: 0, scale: 1 })
-    setButtonFaded(false)
-    clearTimeout(fadeTimerRef.current)
+
+  function clampPan(x, y, z) {
+    const { maxX, maxY } = panBounds(z)
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    }
   }
-  useEffect(() => () => clearTimeout(fadeTimerRef.current), [])
+
+  function applyZoom(newZoom) {
+    const clamped = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newZoom))
+    if (clamped === 1) { resetZoom(); return } // zoom effect above will reset pan
+    setZoom(clamped)
+    // Re-clamp pan at the new zoom level.
+    setPan(p => clampPan(p.x, p.y, clamped))
+  }
 
   useGesture(
     {
       onDrag: ({ offset: [x, y], dragging: d }) => {
-        if (transform.scale <= 1) return
+        if (zoom <= 1) return
         setDragging(d)
-        setTransform(t => ({ ...t, x, y }))
-        scheduleButtonFade()
+        setPan(clampPan(x, y, zoom))
       },
-      onPinch: ({ offset: [scale] }) => {
-        setTransform(t => ({ ...t, scale: Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale)) }))
-        scheduleButtonFade()
-      },
+      onPinch: ({ offset: [scale] }) => applyZoom(scale),
       onWheel: ({ event, delta: [, dy] }) => {
         event.preventDefault()
-        setTransform(t => ({
-          ...t,
-          scale: Math.max(MIN_SCALE, Math.min(MAX_SCALE, t.scale * (1 - dy * 0.002))),
-        }))
-        scheduleButtonFade()
+        applyZoom(zoom * (1 - dy * 0.002))
       },
     },
     {
       target: containerRef,
-      drag:   { from: () => [transform.x, transform.y] },
-      pinch:  { scaleBounds: { min: MIN_SCALE, max: MAX_SCALE }, from: () => [transform.scale, 0] },
+      drag:   { from: () => [pan.x, pan.y] },
+      pinch:  { scaleBounds: { min: MIN_SCALE, max: MAX_SCALE }, from: () => [zoom, 0] },
       wheel:  { eventOptions: { passive: false } },
     },
   )
 
-  const isZoomed = transform.scale !== 1
+  const isZoomed = zoom !== 1
   const bgColor  = effectiveSettings.backgroundColor
 
   const showPrerenderOverlay = isVideo && preRendering
@@ -337,27 +379,25 @@ export function CharFieldViewport() {
   return (
     <div
       ref={containerRef}
-      onDoubleClick={resetTransform}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
+      onDoubleClick={() => { resetZoom() }}
       onPointerCancel={onPointerUp}
-      className={styles.component}
       style={{
-        cursor:     dragging ? 'grabbing' : isZoomed ? 'grab' : 'default',
+        cursor: dragging ? 'grabbing' : isZoomed ? 'grab' : 'default',
         userSelect: isZoomed ? 'none' : 'auto',
       }}
+      className={styles.component}
+      {...{ onPointerDown, onPointerMove, onPointerUp }}
     >
       <div
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
         className={styles.transformLayer}
-        style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }}
       >
         {/* Video → single canvas (glyphs or raw) painted imperatively. */}
         {isVideo && hasVideoFrame && (
           <canvas
             ref={videoCanvasRef}
-            className={styles.output}
             style={{ background: bgColor }}
+            className={styles.output}
           />
         )}
 
@@ -407,11 +447,11 @@ export function CharFieldViewport() {
           </span>
           <div className={styles.prerenderBar}>
             <div
-              className={styles.prerenderBarFill}
               style={{ width: `${prerenderPct}%` }}
+              className={styles.prerenderBarFill}
             />
           </div>
-          <span className={styles.prerenderLabel} style={{ opacity: 0.55 }}>
+          <span style={{ opacity: 0.55 }} className={styles.prerenderLabel}>
             {prerenderPct}%
           </span>
         </div>
@@ -425,15 +465,6 @@ export function CharFieldViewport() {
         <span className={styles.badge}>Input</span>
       )}
 
-      {transform.scale !== 1 && !showingRaw && (
-        <button
-          type='button'
-          className={`${styles.resetZoomButton}${buttonFaded ? ` ${styles.resetZoomButtonFaded}` : ''}`}
-          onClick={resetTransform}
-        >
-          Reset zoom
-        </button>
-      )}
     </div>
   )
 }

@@ -45,9 +45,21 @@ export function CharFieldProvider({ children }) {
   const [committedSettings, setCommittedSettings] = useState(DEFAULTS)
   const settingsRef = useRef(settings)
   settingsRef.current = settings
-  const commitSettings = useCallback(() => {
-    setCommittedSettings({ ...settingsRef.current })
+  // extraPatch lets callers forward a patch that hasn't resolved through React
+  // state yet (e.g. the same patch just passed to update()). Without it,
+  // settingsRef.current still holds the pre-update value at call time.
+  const commitSettings = useCallback((extraPatch) => {
+    setCommittedSettings(extraPatch
+      ? { ...settingsRef.current, ...extraPatch }
+      : { ...settingsRef.current },
+    )
   }, [])
+
+  // Viewport zoom — lives here so the settings panel can read/write it.
+  // Pan (x/y) stays local to the viewport since the settings panel doesn't need it.
+  const ZOOM_DEFAULT = 1
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT)
+  const resetZoom = useCallback(() => setZoom(ZOOM_DEFAULT), [])
 
   const [source, setSource] = useState(null)
   const [sourceName, setSourceName] = useState(null)
@@ -135,10 +147,11 @@ export function CharFieldProvider({ children }) {
 
   const value = useMemo(() => ({
     settings, committedSettings, update, commitSettings, resetSection, resetAll,
+    zoom, setZoom, resetZoom, ZOOM_DEFAULT,
     source, sourceName, isLoading, error,
     loadImageFile, loadLiveFeed, loadVideoFile, clearSource,
     effectiveTextColor,
-  }), [settings, committedSettings, update, commitSettings, resetSection, resetAll, source, sourceName, isLoading, error, loadImageFile, loadLiveFeed, loadVideoFile, clearSource, effectiveTextColor])
+  }), [settings, committedSettings, update, commitSettings, resetSection, resetAll, zoom, setZoom, resetZoom, source, sourceName, isLoading, error, loadImageFile, loadLiveFeed, loadVideoFile, clearSource, effectiveTextColor])
 
   return <CharFieldContext.Provider {...{ value }}>{children}</CharFieldContext.Provider>
 }

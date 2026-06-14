@@ -128,24 +128,22 @@ export function VideoTrimModal({ file, duration, onConfirm, onCancel }) {
         {/* Visible video preview — shows the current frame while scrubbing / playing */}
         <div className={styles.previewWrapper}>
           <video
-            ref={videoRef}
-            className={styles.preview}
             playsInline
+            ref={videoRef}
             muted={false}
+            className={styles.preview}
           />
         </div>
 
         <Trim
-          duration={duration}
           maxSelection={MAX_TRIM_SECONDS}
-          selection={selection}
           onSelectionChange={handleSelectionChange}
+          {...{ duration, selection }}
         >
           <VideoFrameStrip
-            file={file}
-            duration={duration}
             height={80}
             playhead={currentTime}
+            {...{ file, duration }}
           />
         </Trim>
 

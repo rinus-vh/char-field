@@ -8,6 +8,7 @@ import {
 
 import { useCharField, DEFAULTS, SETTINGS_SECTIONS } from '@/features/contexts/CharFieldContext.jsx'
 import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
+import { AnimatableRow } from '@/features/panels/AnimatableRow.jsx'
 import { MASK_MODE_OPTIONS } from '@/features/pipeline/maskProviders/index.js'
 import { GLYPH_SET_OPTIONS } from '@/features/pipeline/glyphSets.js'
 
@@ -33,9 +34,20 @@ function isSectionDirty(settings, section) {
   return SETTINGS_SECTIONS[section].some(k => settings[k] !== DEFAULTS[k])
 }
 
+const ZOOM_DEFAULT = 1
+
 export function SettingsContent({ onOpenExport }) {
-  const { settings, update, commitSettings, resetSection, source, clearSource, effectiveTextColor } = useCharField()
+  const { settings, update, commitSettings, resetSection, source, clearSource, effectiveTextColor, zoom, setZoom, resetZoom } = useCharField()
   const timeline = useVideoTimeline()
+
+  // Live animated values from the timeline (undefined when no track / not video).
+  // These take priority in the UI so sliders reflect what's actually rendering.
+  const liveSample = timeline?.liveSample ?? {}
+  const liveCell    = liveSample.cellSize        ?? settings.cellSize
+  const liveContrast = liveSample.contrast       ?? settings.contrast
+  const liveInvert  = liveSample.invert          ?? settings.invert
+  const liveGlyphSet = liveSample.glyphSet       ?? settings.glyphSet
+  const liveBg      = liveSample.backgroundColor ?? settings.backgroundColor
 
   // When the video timeline is in recording mode, setting changes are also
   // stored as keyframes at the current playhead position.
@@ -45,15 +57,21 @@ export function SettingsContent({ onOpenExport }) {
   }
 
   // Instant-commit for controls that don't drag (toggles, dropdowns, buttons).
+  // Pass the same patch to commitSettings so the committed value includes it
+  // even though the setState hasn't resolved yet.
   function recAndCommit(path, label, value) {
     rec(path, label, value)
-    commitSettings()
+    commitSettings({ [path]: value })
   }
 
   function updateAndCommit(patch) {
     update(patch)
-    commitSettings()
+    commitSettings(patch)
   }
+
+  // Tracks whether the mask-tolerance slider is currently being dragged so we
+  // can pause video playback on the first movement and resume on release.
+  const maskDraggingRef = React.useRef(false)
 
   const usesColorKey = settings.maskMode === 'auto' || settings.maskMode === 'colorKey'
 
@@ -104,9 +122,9 @@ export function SettingsContent({ onOpenExport }) {
 
       <Section title='Color' dirty={isSectionDirty(settings, 'color')} onReset={() => resetSection('color')}>
         <PanelContainer>
-          <PanelContainerSettingsRow label='Background'>
-            <ColorInput value={settings.backgroundColor} onChange={v => rec('backgroundColor', 'Background', v)} />
-          </PanelContainerSettingsRow>
+          <AnimatableRow label='Background' path='backgroundColor' value={liveBg}>
+            <ColorInput value={liveBg} onChange={v => rec('backgroundColor', 'Background', v)} />
+          </AnimatableRow>
 
           <PanelContainerSettingsRow label='Automatic text color'>
             <Checkbox checked={settings.textColorAuto} onChange={v => update({ textColorAuto: v })} />
@@ -120,7 +138,6 @@ export function SettingsContent({ onOpenExport }) {
             )}
           </PanelContainerSettingsRow>
         </PanelContainer>
-
       </Section>
 
       <Section title='Masking' dirty={isSectionDirty(settings, 'masking')} onReset={() => resetSection('masking')}>
@@ -139,8 +156,19 @@ export function SettingsContent({ onOpenExport }) {
         {usesColorKey && (
           <Slider
             value={settings.maskTolerance}
-            onChange={v => update({ maskTolerance: v })}
-            onCommit={commitSettings}
+            onChange={v => {
+              // Pause video on the first drag movement so the live single-frame
+              // preview renders without the playhead racing ahead.
+              if (!maskDraggingRef.current) {
+                maskDraggingRef.current = true
+                timeline?.pause()
+              }
+              update({ maskTolerance: v })
+            }}
+            onCommit={v => {
+              maskDraggingRef.current = false
+              commitSettings({ maskTolerance: v })
+            }}
             min={0.02}
             max={0.6}
             step={0.01}
@@ -149,7 +177,7 @@ export function SettingsContent({ onOpenExport }) {
         )}
         <p className={styles.hint}>
           {settings.maskMode === 'auto' && 'Detects transparency or a clean white/black background, falling back to AI.'}
-          {settings.maskMode === 'alpha' && 'Uses the image’s own transparency as the subject.'}
+          {settings.maskMode === 'alpha' && 'Uses the image\'s own transparency as the subject.'}
           {settings.maskMode === 'colorKey' && 'Removes a clean, uniform background by colour. Raise tolerance to key more.'}
           {settings.maskMode === 'segmentation' && 'AI isolates the subject from any background (loads on first use).'}
         </p>
@@ -157,37 +185,62 @@ export function SettingsContent({ onOpenExport }) {
 
       <Section title='Glyphs' dirty={isSectionDirty(settings, 'glyphs')} onReset={() => resetSection('glyphs')}>
         <PanelContainer>
-          <PanelContainerSettingsRow label='Character set'>
+          <AnimatableRow label='Character set' path='glyphSet' value={liveGlyphSet}>
             <div className={styles.dropdownSlot}>
               <Dropdown
-                value={settings.glyphSet}
-                onChange={v => updateAndCommit({ glyphSet: v })}
+                value={liveGlyphSet}
+                onChange={v => recAndCommit('glyphSet', 'Character set', v)}
                 options={GLYPH_SET_OPTIONS}
               />
             </div>
-          </PanelContainerSettingsRow>
-          <PanelContainerSettingsRow label='Invert'>
-            <Checkbox checked={settings.invert} onChange={v => recAndCommit('invert', 'Invert', v)} />
-          </PanelContainerSettingsRow>
+          </AnimatableRow>
+          <AnimatableRow label='Invert' path='invert' value={liveInvert}>
+            <Checkbox checked={liveInvert} onChange={v => recAndCommit('invert', 'Invert', v)} />
+          </AnimatableRow>
         </PanelContainer>
 
-        <Slider
-          value={settings.cellSize}
-          onChange={v => rec('cellSize', 'Scale', v)}
-          onCommit={commitSettings}
-          min={4}
-          max={28}
-          step={1}
+        <AnimatableRow
+          standalone
           label='Scale'
-        />
-        <Slider
-          value={settings.contrast}
-          onChange={v => rec('contrast', 'Contrast', v)}
-          onCommit={commitSettings}
-          min={0.5}
-          max={3}
-          step={0.1}
+          path='cellSize'
+          value={liveCell}
+        >
+          <Slider
+            value={liveCell}
+            onChange={v => rec('cellSize', 'Scale', v)}
+            onCommit={commitSettings}
+            min={4}
+            max={28}
+            step={1}
+            label='Scale'
+          />
+        </AnimatableRow>
+        <AnimatableRow
+          standalone
           label='Contrast'
+          path='contrast'
+          value={liveContrast}
+        >
+          <Slider
+            value={liveContrast}
+            onChange={v => rec('contrast', 'Contrast', v)}
+            onCommit={commitSettings}
+            min={0.5}
+            max={3}
+            step={0.1}
+            label='Contrast'
+          />
+        </AnimatableRow>
+      </Section>
+
+      <Section title='Camera' dirty={zoom !== ZOOM_DEFAULT} onReset={resetZoom}>
+        <Slider
+          value={zoom}
+          onChange={setZoom}
+          min={1}
+          max={20}
+          step={0.1}
+          label='Zoom'
         />
       </Section>
 
@@ -217,12 +270,8 @@ export function SettingsContent({ onOpenExport }) {
 function Section({ title, children, dirty = false, onReset }) {
   return (
     <div className={styles.componentSection}>
-      <PanelContainerSettingsSectionHeader
-        {...{ title, onReset }}
-        isDirty={dirty}
-      />
+      <PanelContainerSettingsSectionHeader isDirty={dirty} {...{ title, onReset }} />
       <div className={styles.sectionBody}>{children}</div>
     </div>
   )
 }
-

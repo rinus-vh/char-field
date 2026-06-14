@@ -23,23 +23,25 @@ export default function App() {
     <ThemeProvider {...{ theme }}>
       <CharFieldProvider>
         <VideoTimelineProvider>
-          <MinimizedPanelsProvider>
-            <main style={getThemeVariables(theme)} className={styles.app}>
-              <Header
-                title='Char-field'
-                logo={AtSignIcon}
-                onToggleTheme={() => setIsDark(prev => !prev)}
-                layoutClassName={styles.headerLayout}
-                {...{ isDark }}
-              />
+          <VideoPrerenderProvider>
+            <MinimizedPanelsProvider>
+              <main style={getThemeVariables(theme)} className={styles.app}>
+                <Header
+                  title='Char-field'
+                  logo={AtSignIcon}
+                  onToggleTheme={() => setIsDark(prev => !prev)}
+                  layoutClassName={styles.headerLayout}
+                  {...{ isDark }}
+                />
 
-              <Grid layoutClassName={styles.gridLayout}>
-                <AppPanels />
-              </Grid>
+                <Grid layoutClassName={styles.gridLayout}>
+                  <AppPanels />
+                </Grid>
 
-              <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
-            </main>
-          </MinimizedPanelsProvider>
+                <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
+              </main>
+            </MinimizedPanelsProvider>
+          </VideoPrerenderProvider>
         </VideoTimelineProvider>
       </CharFieldProvider>
     </ThemeProvider>

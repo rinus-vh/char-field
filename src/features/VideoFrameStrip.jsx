@@ -122,12 +122,12 @@ export function VideoFrameStrip({
   return (
     <div
       ref={wrapperRef}
-      className={`${styles.component}${layoutClassName ? ` ${layoutClassName}` : ''}`}
       style={{ height }}
+      className={`${styles.component}${layoutClassName ? ` ${layoutClassName}` : ''}`}
     >
       <canvas ref={canvasRef} className={styles.canvas} />
       {playheadPct && (
-        <div className={styles.playhead} style={{ left: playheadPct }} />
+        <div style={{ left: playheadPct }} className={styles.playhead} />
       )}
     </div>
   )

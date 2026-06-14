@@ -19,6 +19,7 @@ export const ANIMATABLE_TRACKS = [
   { path: 'cellSize',         label: 'Scale' },
   { path: 'contrast',         label: 'Contrast' },
   { path: 'invert',           label: 'Invert' },
+  { path: 'glyphSet',         label: 'Character set' },
   { path: 'backgroundColor',  label: 'Background' },
 ]
 
@@ -251,6 +252,94 @@ export function VideoTimelineProvider({ children }) {
     setAnchorKeyframe(null)
   }, [])
 
+  // Removes every keyframe that is currently selected.
+  const removeSelected = useCallback(() => {
+    const sel = selectedKeyframesRef.current
+    if (sel.size === 0) return
+    setTracks(prev => prev
+      .map(tr => ({ ...tr, keyframes: tr.keyframes.filter(k => !sel.has(selKey(tr.id, k.id))) }))
+      .filter(tr => tr.keyframes.length > 0))
+    const empty = new Set()
+    selectedKeyframesRef.current = empty
+    setSelectedKeyframes(empty)
+    setAnchorKeyframe(null)
+  }, [])
+
+  // Removes an entire track and cleans up its selected keyframes.
+  const removeTrack = useCallback((trackId) => {
+    const track = tracksRef.current.find(tr => tr.id === trackId)
+    const keysToRemove = track ? track.keyframes.map(kf => selKey(trackId, kf.id)) : []
+    setTracks(prev => prev.filter(tr => tr.id !== trackId))
+    if (keysToRemove.length > 0) {
+      const next = new Set(selectedKeyframesRef.current)
+      for (const k of keysToRemove) next.delete(k)
+      selectedKeyframesRef.current = next
+      setSelectedKeyframes(next)
+    }
+  }, [])
+
+  // Internal clipboard — stores keyframe data relative to the earliest selected time
+  // so paste always offsets from the current playhead position.
+  const clipboardRef = useRef(null)
+
+  const copySelected = useCallback(() => {
+    const sel = selectedKeyframesRef.current
+    if (sel.size === 0) return
+    const items = []
+    for (const track of tracksRef.current) {
+      for (const kf of track.keyframes) {
+        if (sel.has(selKey(track.id, kf.id))) {
+          items.push({ path: track.path, label: track.label, time: kf.time, value: kf.value })
+        }
+      }
+    }
+    if (items.length === 0) return
+    const minTime = Math.min(...items.map(i => i.time))
+    clipboardRef.current = items.map(i => ({
+      path: i.path, label: i.label, relativeTime: i.time - minTime, value: i.value,
+    }))
+  }, [])
+
+  const pasteKeyframes = useCallback(() => {
+    const cb = clipboardRef.current
+    if (!cb || cb.length === 0) return
+    const t = playheadRef.current
+    for (const item of cb) {
+      addOrUpdateKeyframe(item.path, item.label, t + item.relativeTime, item.value)
+    }
+  }, [addOrUpdateKeyframe])
+
+  // Keyboard shortcuts: Delete/Backspace, Cmd/Ctrl+C, Cmd/Ctrl+V.
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedKeyframesRef.current.size > 0) {
+          e.preventDefault()
+          removeSelected()
+        }
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+        if (selectedKeyframesRef.current.size > 0) {
+          e.preventDefault()
+          copySelected()
+        }
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+        if (clipboardRef.current) {
+          e.preventDefault()
+          pasteKeyframes()
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [removeSelected, copySelected, pasteKeyframes])
+
   const clearAllTracks = useCallback(() => {
     const empty = new Set()
     tracksRef.current = []
@@ -271,6 +360,7 @@ export function VideoTimelineProvider({ children }) {
   const value = useMemo(() => ({
     tracks, playhead, playheadRef, playing, loop, fps, duration, recording, selectedKeyframes, liveSample, sampleRef,
     record, addOrUpdateKeyframe, clearAllTracks, moveSelectedKeyframes,
+    removeSelected, removeTrack, copySelected, pasteKeyframes,
     selectKeyframe, selectKeyframesInBox, clearSelection,
     setPlayhead, sampleAt, play, pause, toggle,
     setLoop, setRecording, setTrackMuted, setFps,
@@ -278,13 +368,14 @@ export function VideoTimelineProvider({ children }) {
   }), [
     tracks, playhead, playing, loop, fps, duration, recording, selectedKeyframes, liveSample,
     record, addOrUpdateKeyframe, clearAllTracks, moveSelectedKeyframes,
+    removeSelected, removeTrack, copySelected, pasteKeyframes,
     selectKeyframe, selectKeyframesInBox, clearSelection,
     setPlayhead, sampleAt, play, pause, toggle,
     setLoop, setRecording, setTrackMuted, setFps,
     isVideo,
   ])
 
-  return <VideoTimelineContext.Provider value={value}>{children}</VideoTimelineContext.Provider>
+  return <VideoTimelineContext.Provider {...{ value }}>{children}</VideoTimelineContext.Provider>
 }
 
 export function useVideoTimeline() {

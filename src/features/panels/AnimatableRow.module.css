@@ -1,0 +1,39 @@
+/* Small dot shown inside the row when a timeline track exists for that path. */
+
+/* Standalone wrapper for full-width controls (Slider). Provides the right-click
+   surface and positions the dot indicator relative to the control. */
+.standaloneWrapper {
+  position: relative;
+}
+
+.standaloneDot {
+  position: absolute;
+  /* Sits beside the label text at the top-left of the Slider component. The
+     Slider renders its own label row, so we overlap at top-left with a small
+     offset to land visually between the label and the track. */
+  top: 5px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none; /* clicks pass through to the button inside */
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-circle);
+  background-color: var(--interaction-color);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: opacity var(--duration-150);
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+.dotMuted {
+  background-color: color-mix(in srgb, var(--color) 30%, transparent);
+}

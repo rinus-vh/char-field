@@ -96,9 +96,9 @@ export function ViewportContent() {
       <div className={styles.component}>
         <div className={styles.prompt}>
           <FileUpload
+            displayAcceptedFormats
             label={isLoading ? 'Loading…' : 'Drop a photo or video here'}
             accept={ALL_FORMATS}
-            displayAcceptedFormats
             onFile={handleFile}
             layoutClassName={styles.uploadLayout}
           />
@@ -119,19 +119,19 @@ export function ViewportContent() {
             <div className={styles.dialog}>
               <div className={styles.dialogHeader}>
                 <span className={styles.dialogTitle}>Live feed preview</span>
-                <button type='button' className={styles.closeButton} onClick={closeFeed}>
+                <button type='button' onClick={closeFeed} className={styles.closeButton}>
                   <X size={16} />
                 </button>
               </div>
               <video
-                ref={videoRef}
                 autoPlay
                 playsInline
                 muted
+                ref={videoRef}
                 className={styles.video}
               />
               <div className={styles.dialogFooter}>
-                <button type='button' className={styles.startButton} onClick={startFeed}>
+                <button type='button' onClick={startFeed} className={styles.startButton}>
                   <CircleDot size={15} />
                   <span>Use live feed</span>
                 </button>
