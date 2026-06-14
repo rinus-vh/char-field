@@ -1,0 +1,80 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-black) 65%, transparent);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-16);
+  background: var(--background-color, #1a1a1a);
+  border: 1px solid color-mix(in srgb, var(--color) 15%, transparent);
+  border-radius: var(--radius-8);
+  padding: var(--size-20);
+  width: min(90vw, 600px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--size-8);
+}
+
+.headerIcon {
+  opacity: 0.7;
+}
+
+.title {
+  font-size: var(--font-size-14);
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.hint {
+  font-size: var(--font-size-12);
+  opacity: 0.6;
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.time {
+  font-family: var(--font-family-alt, monospace);
+  font-size: var(--font-size-12);
+  opacity: 0.7;
+}
+
+.previewWrapper {
+  width: 100%;
+  background: #000;
+  border-radius: var(--radius-4);
+  overflow: hidden;
+  /* Fixed height so the dialog doesn't jump while video loads */
+  max-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-8);
+}

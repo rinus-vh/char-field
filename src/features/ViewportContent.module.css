@@ -19,26 +19,8 @@
   width: 100%;
 }
 
-.liveFeedButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--size-8);
+.liveFeedButtonLayout {
   width: 100%;
-  padding: var(--size-8) var(--size-16);
-  border: 1px solid color-mix(in srgb, var(--color) 20%, transparent);
-  border-radius: var(--radius-4);
-  background: none;
-  color: color-mix(in srgb, var(--color) 60%, transparent);
-  font-size: var(--font-size-13);
-  cursor: pointer;
-  transition: border-color var(--duration-150), color var(--duration-150), background var(--duration-150);
-
-  &:hover {
-    border-color: color-mix(in srgb, var(--color) 50%, transparent);
-    color: var(--color);
-    background: color-mix(in srgb, var(--color) 5%, transparent);
-  }
 }
 
 .error {

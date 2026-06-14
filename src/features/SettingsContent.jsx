@@ -1,12 +1,13 @@
-import { useState } from 'react'
 import { Download, ImageOff, RotateCcw, RotateCw } from 'lucide-react'
 import {
   PanelContainer, PanelContainerSettingsRow,
-  Slider, Dropdown, Checkbox, ColorInput, Button, Modal,
-  LabelUppercaseSm,
+  PanelContainerSettingsSectionHeader,
+  ActionIconButton,
+  Slider, Dropdown, Checkbox, ColorInput, GhostButton,
 } from '@6njp/prototype-library'
 
 import { useCharField, DEFAULTS, SETTINGS_SECTIONS } from '@/features/contexts/CharFieldContext.jsx'
+import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
 import { MASK_MODE_OPTIONS } from '@/features/pipeline/maskProviders/index.js'
 import { GLYPH_SET_OPTIONS } from '@/features/pipeline/glyphSets.js'
 
@@ -33,8 +34,26 @@ function isSectionDirty(settings, section) {
 }
 
 export function SettingsContent({ onOpenExport }) {
-  const { settings, update, resetSection, source, clearSource, effectiveTextColor } = useCharField()
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const { settings, update, commitSettings, resetSection, source, clearSource, effectiveTextColor } = useCharField()
+  const timeline = useVideoTimeline()
+
+  // When the video timeline is in recording mode, setting changes are also
+  // stored as keyframes at the current playhead position.
+  function rec(path, label, value) {
+    update({ [path]: value })
+    timeline?.record(path, label, value)
+  }
+
+  // Instant-commit for controls that don't drag (toggles, dropdowns, buttons).
+  function recAndCommit(path, label, value) {
+    rec(path, label, value)
+    commitSettings()
+  }
+
+  function updateAndCommit(patch) {
+    update(patch)
+    commitSettings()
+  }
 
   const usesColorKey = settings.maskMode === 'auto' || settings.maskMode === 'colorKey'
 
@@ -47,7 +66,7 @@ export function SettingsContent({ onOpenExport }) {
             <div className={styles.dropdownSlot}>
               <Dropdown
                 value={settings.aspectRatio}
-                onChange={v => update({ aspectRatio: v })}
+                onChange={v => updateAndCommit({ aspectRatio: v })}
                 options={ASPECT_OPTIONS}
               />
             </div>
@@ -56,28 +75,29 @@ export function SettingsContent({ onOpenExport }) {
             <div className={styles.dropdownSlot}>
               <Dropdown
                 value={settings.imageFit}
-                onChange={v => update({ imageFit: v })}
+                onChange={v => updateAndCommit({ imageFit: v })}
                 options={VIEWPORT_FIT_OPTIONS}
               />
             </div>
           </PanelContainerSettingsRow>
+          <PanelContainerSettingsRow label='Show raw input'>
+            <Checkbox checked={settings.showRawInput} onChange={v => update({ showRawInput: v })} />
+          </PanelContainerSettingsRow>
           <PanelContainerSettingsRow label={`Rotation ${settings.rotation}°`}>
-            <button
-              type='button'
+            <ActionIconButton
+              icon={RotateCcw}
               onClick={() => update({ rotation: (settings.rotation + 270) % 360 })}
               title='Rotate 90° left'
-              className={styles.iconButton}
-            >
-              <RotateCcw size={13} />
-            </button>
-            <button
-              type='button'
+              size={20}
+              style='outline'
+            />
+            <ActionIconButton
+              icon={RotateCw}
               onClick={() => update({ rotation: (settings.rotation + 90) % 360 })}
               title='Rotate 90° right'
-              className={styles.iconButton}
-            >
-              <RotateCw size={13} />
-            </button>
+              size={20}
+              style='outline'
+            />
           </PanelContainerSettingsRow>
         </PanelContainer>
       </Section>
@@ -85,7 +105,7 @@ export function SettingsContent({ onOpenExport }) {
       <Section title='Color' dirty={isSectionDirty(settings, 'color')} onReset={() => resetSection('color')}>
         <PanelContainer>
           <PanelContainerSettingsRow label='Background'>
-            <ColorInput value={settings.backgroundColor} onChange={v => update({ backgroundColor: v })} />
+            <ColorInput value={settings.backgroundColor} onChange={v => rec('backgroundColor', 'Background', v)} />
           </PanelContainerSettingsRow>
 
           <PanelContainerSettingsRow label='Automatic text color'>
@@ -109,7 +129,7 @@ export function SettingsContent({ onOpenExport }) {
             <div className={styles.dropdownSlot}>
               <Dropdown
                 value={settings.maskMode}
-                onChange={v => update({ maskMode: v })}
+                onChange={v => updateAndCommit({ maskMode: v })}
                 options={MASK_MODE_OPTIONS}
               />
             </div>
@@ -120,6 +140,7 @@ export function SettingsContent({ onOpenExport }) {
           <Slider
             value={settings.maskTolerance}
             onChange={v => update({ maskTolerance: v })}
+            onCommit={commitSettings}
             min={0.02}
             max={0.6}
             step={0.01}
@@ -140,19 +161,20 @@ export function SettingsContent({ onOpenExport }) {
             <div className={styles.dropdownSlot}>
               <Dropdown
                 value={settings.glyphSet}
-                onChange={v => update({ glyphSet: v })}
+                onChange={v => updateAndCommit({ glyphSet: v })}
                 options={GLYPH_SET_OPTIONS}
               />
             </div>
           </PanelContainerSettingsRow>
           <PanelContainerSettingsRow label='Invert'>
-            <Checkbox checked={settings.invert} onChange={v => update({ invert: v })} />
+            <Checkbox checked={settings.invert} onChange={v => recAndCommit('invert', 'Invert', v)} />
           </PanelContainerSettingsRow>
         </PanelContainer>
 
         <Slider
           value={settings.cellSize}
-          onChange={v => update({ cellSize: v })}
+          onChange={v => rec('cellSize', 'Scale', v)}
+          onCommit={commitSettings}
           min={4}
           max={28}
           step={1}
@@ -160,7 +182,8 @@ export function SettingsContent({ onOpenExport }) {
         />
         <Slider
           value={settings.contrast}
-          onChange={v => update({ contrast: v })}
+          onChange={v => rec('contrast', 'Contrast', v)}
+          onCommit={commitSettings}
           min={0.5}
           max={3}
           step={0.1}
@@ -168,48 +191,25 @@ export function SettingsContent({ onOpenExport }) {
         />
       </Section>
 
-      {source && (
-        <Section title='Image'>
-          <Button
-            label='Replace image'
-            variant='outline'
-            icon={ImageOff}
-            onClick={() => setConfirmOpen(true)}
-            layoutClassName={styles.fullButtonLayout}
-          />
-        </Section>
-      )}
-
-      <Section title='Export'>
-        <Button
+      <div className={styles.bottomActions}>
+        <GhostButton
           label='Export settings'
-          variant='solid'
           icon={Download}
+          color='white'
           onClick={onOpenExport}
           layoutClassName={styles.fullButtonLayout}
         />
-      </Section>
+        {source && (
+          <GhostButton
+            label='Discard image'
+            icon={ImageOff}
+            color='orange'
+            onClick={clearSource}
+            layoutClassName={styles.fullButtonLayout}
+          />
+        )}
+      </div>
 
-      <Modal
-        isOpen={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title='Replace image?'
-      >
-        <div className={styles.confirmBody}>
-          <p className={styles.hint}>All adjustments you have made will be lost.</p>
-          <div className={styles.confirmButtons}>
-            <Button
-              label='Cancel'
-              variant='outline'
-              onClick={() => setConfirmOpen(false)}
-            />
-            <Button
-              label='Replace'
-              onClick={() => { clearSource(); setConfirmOpen(false) }}
-            />
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }
@@ -217,20 +217,10 @@ export function SettingsContent({ onOpenExport }) {
 function Section({ title, children, dirty = false, onReset }) {
   return (
     <div className={styles.componentSection}>
-      <div className={styles.sectionHeader}>
-        <LabelUppercaseSm layoutClassName={styles.sectionTitleLayout}>{title}</LabelUppercaseSm>
-
-        {dirty && onReset && (
-          <button
-            type='button'
-            onClick={onReset}
-            title={`Reset ${title} to defaults`}
-            className={styles.resetButton}
-          >
-            <RotateCcw size={11} />
-          </button>
-        )}
-      </div>
+      <PanelContainerSettingsSectionHeader
+        {...{ title, onReset }}
+        isDirty={dirty}
+      />
       <div className={styles.sectionBody}>{children}</div>
     </div>
   )

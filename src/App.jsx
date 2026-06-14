@@ -1,14 +1,17 @@
-import { Type } from 'lucide-react'
 import {
   Grid, Header, Panel,
   MinimizedPanelsProvider, MinimizedPanelsMenu, usePanelManager,
 } from '@6njp/prototype-library'
 import { getThemeVariables, ThemeProvider } from '@6njp/prototype-library/machinery'
+import { AtSignIcon } from 'lucide-react'
 
-import { CharFieldProvider } from '@/features/contexts/CharFieldContext.jsx'
+import { CharFieldProvider, useCharField } from '@/features/contexts/CharFieldContext.jsx'
+import { VideoTimelineProvider, useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
+import { VideoPrerenderProvider } from '@/features/contexts/VideoPrerenderContext.jsx'
 import { ViewportContent } from '@/features/ViewportContent.jsx'
 import { SettingsContent } from '@/features/SettingsContent.jsx'
 import { ExportPanelContent } from '@/features/panels/ExportPanelContent.jsx'
+import { TimelinePanelContent } from '@/features/panels/TimelinePanelContent.jsx'
 
 import styles from './App.module.css'
 
@@ -19,41 +22,48 @@ export default function App() {
   return (
     <ThemeProvider {...{ theme }}>
       <CharFieldProvider>
-        <MinimizedPanelsProvider>
-          <main style={getThemeVariables(theme)} className={styles.app}>
-            <Header
-              title='Char Field'
-              logo={Type}
-              onToggleTheme={() => setIsDark(prev => !prev)}
-              layoutClassName={styles.headerLayout}
-              {...{ isDark }}
-            />
+        <VideoTimelineProvider>
+          <MinimizedPanelsProvider>
+            <main style={getThemeVariables(theme)} className={styles.app}>
+              <Header
+                title='Char-field'
+                logo={AtSignIcon}
+                onToggleTheme={() => setIsDark(prev => !prev)}
+                layoutClassName={styles.headerLayout}
+                {...{ isDark }}
+              />
 
-            <Grid layoutClassName={styles.gridLayout}>
-              <AppPanels />
-            </Grid>
+              <Grid layoutClassName={styles.gridLayout}>
+                <AppPanels />
+              </Grid>
 
-            <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
-          </main>
-        </MinimizedPanelsProvider>
+              <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
+            </main>
+          </MinimizedPanelsProvider>
+        </VideoTimelineProvider>
       </CharFieldProvider>
     </ThemeProvider>
   )
 }
 
 function AppPanels() {
-  const viewport = usePanelManager('viewport', 'Viewport')
-  const settings = usePanelManager('settings', 'Settings')
-  const exportPanel = usePanelManager('export', 'Export', { defaultVisible: false })
+  const { isVideo }              = useVideoTimeline()
+  const { settings: appSettings } = useCharField()
+
+  const viewportTitle = appSettings.showRawInput ? 'Input' : 'Viewport'
+  const viewport  = usePanelManager('viewport',  viewportTitle)
+  const settings  = usePanelManager('settings',  'Settings')
+  const exportPanel = usePanelManager('export',  'Export',   { defaultVisible: false })
+  const timeline  = usePanelManager('timeline',  'Timeline')
 
   return (
     <>
       {settings.visible && (
         <Panel
-          minimizable
+          isMinimizable
           title='Settings'
-          minWidth={5}
-          minHeight={10}
+          minWidth={4}
+          minHeight={9}
           onMinimize={settings.minimize}
         >
           <SettingsContent onOpenExport={exportPanel.open} />
@@ -62,10 +72,10 @@ function AppPanels() {
 
       {viewport.visible && (
         <Panel
-          minimizable
+          isMinimizable
           title='Viewport'
-          minWidth={7}
-          minHeight={10}
+          minWidth={8}
+          minHeight={6}
           onMinimize={viewport.minimize}
         >
           <ViewportContent />
@@ -74,15 +84,27 @@ function AppPanels() {
 
       {exportPanel.visible && (
         <Panel
-          closeable
-          minimizable
+          isCloseable
+          isMinimizable
           title='Export'
           minWidth={4}
-          minHeight={6}
+          minHeight={4}
           onClose={exportPanel.close}
           onMinimize={exportPanel.minimize}
         >
           <ExportPanelContent />
+        </Panel>
+      )}
+
+      {isVideo && timeline.visible && (
+        <Panel
+          isMinimizable
+          title='Timeline'
+          minWidth={8}
+          minHeight={3}
+          onMinimize={timeline.minimize}
+        >
+          <TimelinePanelContent />
         </Panel>
       )}
     </>

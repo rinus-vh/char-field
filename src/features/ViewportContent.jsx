@@ -1,22 +1,65 @@
 import { useEffect, useRef, useState } from 'react'
-import { FileUpload } from '@6njp/prototype-library'
+import { FileUpload, GhostButton } from '@6njp/prototype-library'
 import { Video, X, CircleDot } from 'lucide-react'
 
 import { useCharField } from '@/features/contexts/CharFieldContext.jsx'
 import { CharFieldViewport } from '@/features/CharFieldViewport.jsx'
+import { VideoTrimModal } from '@/features/VideoTrimModal.jsx'
 
 import styles from './ViewportContent.module.css'
 
-// The viewport panel body: an upload prompt until a source is loaded, then the
-// live glyph output. Image upload is the only input today; video and live camera
-// will mount their own capture UI here while reusing CharFieldViewport unchanged.
+const IMAGE_FORMATS = ['.png', '.jpg', '.jpeg', '.webp', '.gif']
+const VIDEO_FORMATS = ['.mp4', '.webm', '.mov', '.avi']
+const ALL_FORMATS   = [...IMAGE_FORMATS, ...VIDEO_FORMATS]
+
+function isVideoFile(file) {
+  if (file.type.startsWith('video/')) return true
+  const ext = '.' + file.name.split('.').pop().toLowerCase()
+  return VIDEO_FORMATS.includes(ext)
+}
+
 export function ViewportContent() {
-  const { source, loadImageFile, loadLiveFeed, isLoading, error } = useCharField()
-  const [feedOpen, setFeedOpen] = useState(false)
-  const [stream, setStream] = useState(null)
+  const { source, loadImageFile, loadVideoFile, loadLiveFeed, isLoading, error } = useCharField()
+
+  // ── Live feed state ────────────────────────────────────────────────────────
+  const [feedOpen,  setFeedOpen]  = useState(false)
+  const [stream,    setStream]    = useState(null)
   const [feedError, setFeedError] = useState(null)
   const videoRef = useRef(null)
 
+  // ── Video trim state ───────────────────────────────────────────────────────
+  const [pendingVideo,   setPendingVideo]  = useState(null) // { file, duration }
+  const [videoLoadError, setVideoLoadError] = useState(null)
+
+  // ── Unified file handler — routes to image or video pipeline ──────────────
+  async function handleFile(file) {
+    setVideoLoadError(null)
+    if (isVideoFile(file)) {
+      try {
+        const video = document.createElement('video')
+        const url   = URL.createObjectURL(file)
+        video.src     = url
+        video.preload = 'metadata'
+        await new Promise((resolve, reject) => {
+          video.addEventListener('loadedmetadata', resolve, { once: true })
+          video.addEventListener('error', reject,           { once: true })
+        })
+        URL.revokeObjectURL(url)
+        setPendingVideo({ file, duration: video.duration })
+      } catch {
+        setVideoLoadError('Could not read video file')
+      }
+    } else {
+      loadImageFile(file)
+    }
+  }
+
+  function handleTrimConfirm(trimStart, trimEnd) {
+    loadVideoFile(pendingVideo.file, trimStart, trimEnd)
+    setPendingVideo(null)
+  }
+
+  // ── Live feed handlers ─────────────────────────────────────────────────────
   async function openFeed() {
     setFeedError(null)
     try {
@@ -38,36 +81,37 @@ export function ViewportContent() {
   async function startFeed() {
     if (!stream) return
     await loadLiveFeed(stream)
-    // Hand stream ownership to the InputSource — don't stop tracks here.
     setStream(null)
     setFeedOpen(false)
   }
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream
-    }
+    if (videoRef.current && stream) videoRef.current.srcObject = stream
   }, [stream, feedOpen])
 
   if (!source) {
+    const anyError = error ?? feedError ?? videoLoadError
+
     return (
       <div className={styles.component}>
         <div className={styles.prompt}>
           <FileUpload
-            label={isLoading ? 'Loading…' : 'Drop an image here'}
-            accept={['.png', '.jpg', '.jpeg', '.webp', '.gif']}
-            onFile={loadImageFile}
+            label={isLoading ? 'Loading…' : 'Drop a photo or video here'}
+            accept={ALL_FORMATS}
+            displayAcceptedFormats
+            onFile={handleFile}
             layoutClassName={styles.uploadLayout}
           />
 
-          <button type='button' className={styles.liveFeedButton} onClick={openFeed}>
-            <Video size={15} />
-            <span>Start live feed</span>
-          </button>
+          <GhostButton
+            label='Start live feed'
+            icon={Video}
+            color='white'
+            onClick={openFeed}
+            layoutClassName={styles.liveFeedButtonLayout}
+          />
 
-          {(error || feedError) && (
-            <span className={styles.error}>{error ?? feedError}</span>
-          )}
+          {anyError && <span className={styles.error}>{anyError}</span>}
         </div>
 
         {feedOpen && (
@@ -94,6 +138,15 @@ export function ViewportContent() {
               </div>
             </div>
           </div>
+        )}
+
+        {pendingVideo && (
+          <VideoTrimModal
+            file={pendingVideo.file}
+            duration={pendingVideo.duration}
+            onConfirm={handleTrimConfirm}
+            onCancel={() => setPendingVideo(null)}
+          />
         )}
       </div>
     )

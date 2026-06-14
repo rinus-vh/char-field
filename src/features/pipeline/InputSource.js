@@ -8,9 +8,15 @@
 // than this anyway, so detail is not lost.
 const MAX_PROCESS_EDGE = 1024
 
-/** @param {HTMLImageElement|ImageBitmap} bitmap */
-function drawToFittedCanvas(bitmap, srcW, srcH) {
-  const scale = Math.min(1, MAX_PROCESS_EDGE / Math.max(srcW, srcH))
+// Video frames are pre-extracted in bulk (hundreds per clip) and re-masked /
+// re-sampled on every playback frame, so they run at a lower resolution than
+// stills. ASCII output is coarse, so the loss of detail is invisible while the
+// memory and per-frame cost drop ~4×.
+const VIDEO_PROCESS_EDGE = 540
+
+/** @param {HTMLImageElement|ImageBitmap|HTMLVideoElement} bitmap */
+function drawToFittedCanvas(bitmap, srcW, srcH, maxEdge = MAX_PROCESS_EDGE) {
+  const scale = Math.min(1, maxEdge / Math.max(srcW, srcH))
   const width = Math.max(1, Math.round(srcW * scale))
   const height = Math.max(1, Math.round(srcH * scale))
 
@@ -113,6 +119,57 @@ export function createLiveFeedInputSource(stream) {
     dispose: () => {
       stream.getTracks().forEach(t => t.stop())
       video.srcObject = null
+    },
+  }
+}
+
+/**
+ * Wraps a video File with an optional trim window. The timeline drives playback
+ * by calling getFrame(relativeTime) — the time is in seconds relative to the
+ * trim start, so 0 is the first frame and (trimEnd - trimStart) is the last.
+ *
+ * @param {File} file
+ * @param {number} trimStart seconds in the original clip
+ * @param {number} trimEnd   seconds in the original clip
+ * @returns {import('./types.js').InputSource}
+ */
+export function createVideoInputSource(file, trimStart, trimEnd) {
+  const url = URL.createObjectURL(file)
+  const video = document.createElement('video')
+  video.src = url
+  video.muted = true
+  video.preload = 'auto'
+
+  // Wait until the video is seekable before the first getFrame.
+  const readyPromise = new Promise(resolve => {
+    if (video.readyState >= 2) { resolve(); return }
+    video.addEventListener('loadeddata', resolve, { once: true })
+  })
+
+  async function seekTo(absTime) {
+    if (Math.abs(video.currentTime - absTime) < 0.016) return
+    video.currentTime = absTime
+    await new Promise((resolve) => {
+      video.addEventListener('seeked', resolve, { once: true })
+    })
+  }
+
+  async function getFrame(relativeTime = 0) {
+    await readyPromise
+    const absTime = trimStart + Math.max(0, Math.min(relativeTime, trimEnd - trimStart))
+    await seekTo(absTime)
+    const { canvas, width, height } = drawToFittedCanvas(video, video.videoWidth, video.videoHeight, VIDEO_PROCESS_EDGE)
+    return { canvas, width, height, hasAlpha: false }
+  }
+
+  return {
+    kind: 'video',
+    isAnimated: false, // timeline-driven; the rAF loop in VideoTimelineContext owns playback
+    duration: trimEnd - trimStart,
+    getFrame,
+    dispose: () => {
+      video.src = ''
+      URL.revokeObjectURL(url)
     },
   }
 }
