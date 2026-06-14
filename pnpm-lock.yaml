@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@6njp/prototype-library':
         specifier: github:rinus-vh/prototype-library
-        version: git+https://git@github.com:rinus-vh/prototype-library.git#05da02ef30792424497f5fd06f5fa34925bfe08b(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: git+https://git@github.com:rinus-vh/prototype-library.git#7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@floating-ui/react':
         specifier: ^0.27.19
         version: 0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -76,8 +76,8 @@ packages:
     resolution: {commit: 494c5aec6296210624627cb1807fa53a7f09294b, path: eslint-plugin, repo: git@github.com:rinus-vh/plugins.git, type: git}
     version: 1.0.0
 
-  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#05da02ef30792424497f5fd06f5fa34925bfe08b':
-    resolution: {commit: 05da02ef30792424497f5fd06f5fa34925bfe08b, repo: git@github.com:rinus-vh/prototype-library.git, type: git}
+  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1':
+    resolution: {commit: 7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1, repo: git@github.com:rinus-vh/prototype-library.git, type: git}
     version: 0.0.1
     engines: {node: '>=22.0.0'}
     hasBin: true
@@ -2481,7 +2481,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#05da02ef30792424497f5fd06f5fa34925bfe08b(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@6njp/prototype-library@git+https://git@github.com:rinus-vh/prototype-library.git#7674b2ae6db404d9c0dc9fc64849a59c8dbab8e1(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@use-gesture/react@10.3.1(react@19.2.7))(lucide-react@1.17.0(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@floating-ui/react': 0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@use-gesture/react': 10.3.1(react@19.2.7)

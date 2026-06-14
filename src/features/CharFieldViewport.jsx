@@ -27,11 +27,28 @@ export function CharFieldViewport() {
   const containerRef = useRef(null)
   const { maskMode, maskTolerance, imageFit } = settings
 
-  // Pull a frame from the active source.
+  // Pull a frame from the active source (static).
   useEffect(() => {
+    if (!source || source.isAnimated) return
     let active = true
     source.getFrame().then(f => { if (active) setFrame(f) })
     return () => { active = false }
+  }, [source])
+
+  // Poll for frames when source is a live feed. ~8 fps is enough to feel live
+  // while keeping the mask debounce (80 ms) from thrashing.
+  useEffect(() => {
+    if (!source?.isAnimated) return
+    let active = true
+    let timer
+    async function poll() {
+      if (!active) return
+      const f = await source.getFrame()
+      if (active) setFrame(f)
+      if (active) timer = setTimeout(poll, 125)
+    }
+    poll()
+    return () => { active = false; clearTimeout(timer) }
   }, [source])
 
   // Mask step — re-runs only when the frame or mask settings change.

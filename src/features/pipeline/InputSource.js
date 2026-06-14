@@ -80,3 +80,39 @@ function loadImageElement(url) {
     img.src = url
   })
 }
+
+/**
+ * Wraps a live MediaStream so the pipeline can sample it frame-by-frame.
+ * Each getFrame() call draws the current video frame into a fresh canvas —
+ * the viewport polls this on an interval to drive the live char-field render.
+ *
+ * @param {MediaStream} stream
+ * @returns {import('./types.js').InputSource}
+ */
+export function createLiveFeedInputSource(stream) {
+  const video = document.createElement('video')
+  video.srcObject = stream
+  video.muted = true
+  video.playsInline = true
+  video.autoplay = true
+
+  // Returns a snapshot of the current video frame, downscaled to MAX_PROCESS_EDGE.
+  async function getFrame() {
+    // Wait until video dimensions are known (first frame arrived).
+    if (!video.videoWidth) {
+      await new Promise(resolve => { video.addEventListener('loadeddata', resolve, { once: true }) })
+    }
+    const { canvas, width, height } = drawToFittedCanvas(video, video.videoWidth, video.videoHeight)
+    return { canvas, width, height, hasAlpha: false }
+  }
+
+  return {
+    kind: 'livefeed',
+    isAnimated: true,
+    getFrame,
+    dispose: () => {
+      stream.getTracks().forEach(t => t.stop())
+      video.srcObject = null
+    },
+  }
+}

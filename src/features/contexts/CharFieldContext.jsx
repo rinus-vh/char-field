@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 
-import { createImageInputSource } from '@/features/pipeline/InputSource.js'
+import { createImageInputSource, createLiveFeedInputSource } from '@/features/pipeline/InputSource.js'
 import { autoTextColor } from '@/features/pipeline/colorUtils.js'
 
 // All tunable output settings live here so the viewport and the settings panel
@@ -76,6 +76,22 @@ export function CharFieldProvider({ children }) {
     }
   }, [])
 
+  const loadLiveFeed = useCallback(async (stream) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const next = createLiveFeedInputSource(stream)
+      sourceRef.current?.dispose()
+      sourceRef.current = next
+      setSource(next)
+      setSourceName('Live feed')
+    } catch (err) {
+      setError(err?.message ?? 'Failed to start live feed')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const clearSource = useCallback(() => {
     sourceRef.current?.dispose()
     sourceRef.current = null
@@ -91,9 +107,9 @@ export function CharFieldProvider({ children }) {
   const value = useMemo(() => ({
     settings, update, resetSection, resetAll,
     source, sourceName, isLoading, error,
-    loadImageFile, clearSource,
+    loadImageFile, loadLiveFeed, clearSource,
     effectiveTextColor,
-  }), [settings, update, resetSection, resetAll, source, sourceName, isLoading, error, loadImageFile, clearSource, effectiveTextColor])
+  }), [settings, update, resetSection, resetAll, source, sourceName, isLoading, error, loadImageFile, loadLiveFeed, clearSource, effectiveTextColor])
 
   return <CharFieldContext.Provider {...{ value }}>{children}</CharFieldContext.Provider>
 }
