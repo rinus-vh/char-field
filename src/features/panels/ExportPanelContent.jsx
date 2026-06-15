@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import {
-  PanelContainer, PanelContainerSettingsRow, PanelContainerDivider,
+  PanelContainer, PanelContainerSettingsRow,
   Dropdown, Button, LabelSm,
 } from '@6njp/prototype-library'
 
-import { useCharField } from '@/features/contexts/CharFieldContext.jsx'
-import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
-import { useVideoPrerenderContext } from '@/features/contexts/VideoPrerenderContext.jsx'
 import { exportDownload } from '@/features/pipeline/exportDownload.js'
 import { exportCharFieldVideo, exportCharFieldSequence } from '@/features/pipeline/exportVideoFile.js'
+
+import { useCharFieldContext } from '@/contexts/CharFieldContext.jsx'
+import { useVideoTimelineContext } from '@/contexts/VideoTimelineContext.jsx'
+import { useVideoPrerenderContext } from '@/contexts/VideoPrerenderContext.jsx'
 
 import styles from './ExportPanelContent.module.css'
 
@@ -59,8 +60,8 @@ const VIDEO_FPS_OPTIONS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ExportPanelContent() {
-  const { source, settings, effectiveTextColor } = useCharField()
-  const { isVideo, sampleAt, duration }          = useVideoTimeline() ?? {}
+  const { source, settings, effectiveTextColor } = useCharFieldContext()
+  const { isVideo, sampleAt, duration }          = useVideoTimelineContext() ?? {}
   const prerender                                = useVideoPrerenderContext()
 
   // Shared
@@ -154,7 +155,7 @@ export function ExportPanelContent() {
 
   const handleExport = isVideo ? handleVideoExport : handleImageExport
 
-  const progressLabel = progress != null ? ` ${Math.round(progress * 100)}%` : ''
+  const progressLabel = progress !== null ? ` ${Math.round(progress * 100)}%` : ''
   const busyLabel     = videoFormat === 'sequence' ? `Rendering…${progressLabel}` : `Recording…${progressLabel}`
 
   return (
@@ -213,7 +214,7 @@ export function ExportPanelContent() {
         )}
       </PanelContainer>
 
-      {(status || progress != null) && (
+      {(status || progress !== null) && (
         <LabelSm layoutClassName={styles.statusLayout}>
           {status}{progressLabel}
         </LabelSm>

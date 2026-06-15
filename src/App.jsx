@@ -1,17 +1,20 @@
 import {
   Grid, Header, Panel,
-  MinimizedPanelsProvider, MinimizedPanelsMenu, usePanelManager,
+  MinimizedPanelsMenuContextProvider, MinimizedPanelsMenu, usePanelManager,
 } from '@6njp/prototype-library'
-import { getThemeVariables, ThemeProvider } from '@6njp/prototype-library/machinery'
+import { getThemeVariables, ThemeContextProvider } from '@6njp/prototype-library/machinery'
 import { AtSignIcon } from 'lucide-react'
 
-import { CharFieldProvider, useCharField } from '@/features/contexts/CharFieldContext.jsx'
-import { VideoTimelineProvider, useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
-import { VideoPrerenderProvider } from '@/features/contexts/VideoPrerenderContext.jsx'
 import { ViewportContent } from '@/features/ViewportContent.jsx'
 import { SettingsContent } from '@/features/SettingsContent.jsx'
 import { ExportPanelContent } from '@/features/panels/ExportPanelContent.jsx'
 import { TimelinePanelContent } from '@/features/panels/TimelinePanelContent.jsx'
+
+import { CharFieldContextProvider } from '@/contexts/CharFieldContextProvider.jsx'
+import { useCharFieldContext } from '@/contexts/CharFieldContext.jsx'
+import { VideoTimelineContextProvider } from '@/contexts/VideoTimelineContextProvider.jsx'
+import { useVideoTimelineContext } from '@/contexts/VideoTimelineContext.jsx'
+import { VideoPrerenderContextProvider } from '@/contexts/VideoPrerenderContextProvider.jsx'
 
 import styles from './App.module.css'
 
@@ -20,11 +23,11 @@ export default function App() {
   const theme = isDark ? 'dark' : 'light'
 
   return (
-    <ThemeProvider {...{ theme }}>
-      <CharFieldProvider>
-        <VideoTimelineProvider>
-          <VideoPrerenderProvider>
-            <MinimizedPanelsProvider>
+    <ThemeContextProvider {...{ theme }}>
+      <CharFieldContextProvider>
+        <VideoTimelineContextProvider>
+          <VideoPrerenderContextProvider>
+            <MinimizedPanelsMenuContextProvider>
               <main style={getThemeVariables(theme)} className={styles.app}>
                 <Header
                   title='Char-field'
@@ -40,17 +43,17 @@ export default function App() {
 
                 <MinimizedPanelsMenu layoutClassName={styles.minimizedMenuLayout} />
               </main>
-            </MinimizedPanelsProvider>
-          </VideoPrerenderProvider>
-        </VideoTimelineProvider>
-      </CharFieldProvider>
-    </ThemeProvider>
+            </MinimizedPanelsMenuContextProvider>
+          </VideoPrerenderContextProvider>
+        </VideoTimelineContextProvider>
+      </CharFieldContextProvider>
+    </ThemeContextProvider>
   )
 }
 
 function AppPanels() {
-  const { isVideo }              = useVideoTimeline()
-  const { settings: appSettings } = useCharField()
+  const { isVideo }              = useVideoTimelineContext()
+  const { settings: appSettings } = useCharFieldContext()
 
   const viewportTitle = appSettings.showRawInput ? 'Input' : 'Viewport'
   const viewport  = usePanelManager('viewport',  viewportTitle)

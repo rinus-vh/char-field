@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "preserve",
     "checkJs": false,
     "allowJs": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "@6njp/prototype-library": ["../prototype-library/index.js"],

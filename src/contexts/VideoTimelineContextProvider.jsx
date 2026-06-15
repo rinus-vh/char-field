@@ -1,27 +1,14 @@
-// Timeline context for video sources. Duration is fixed by the uploaded clip
-// rather than expanding with keyframes (unlike mesh-stage). The rAF loop
-// drives playback; React state updates are throttled to ~fps so the viewport
-// seeks at a sensible rate rather than every animation frame.
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { sampleTrack } from '@/features/pipeline/interpolate.js'
 
-import { useCharField } from './CharFieldContext.jsx'
-import { sampleTrack } from '../pipeline/interpolate.js'
+import { useCharFieldContext } from './CharFieldContext.jsx'
+import { VideoTimelineContext, selKey } from './VideoTimelineContext.jsx'
 
 const EPSILON = 0.04
 
 let _id = 0
 const nextId = () => `kf_${_id++}`
-export const selKey = (trackId, keyframeId) => `${trackId}::${keyframeId}`
-
-// The char-field settings that can be animated on the timeline.
-export const ANIMATABLE_TRACKS = [
-  { path: 'cellSize',         label: 'Scale' },
-  { path: 'contrast',         label: 'Contrast' },
-  { path: 'invert',           label: 'Invert' },
-  { path: 'glyphSet',         label: 'Character set' },
-  { path: 'backgroundColor',  label: 'Background' },
-]
 
 function sampleAll(tracks, time) {
   const out = {}
@@ -34,10 +21,8 @@ function sampleAll(tracks, time) {
   return out
 }
 
-const VideoTimelineContext = createContext(null)
-
-export function VideoTimelineProvider({ children }) {
-  const { source } = useCharField()
+export function VideoTimelineContextProvider({ children }) {
+  const { source } = useCharFieldContext()
   const isVideo    = source?.kind === 'video'
   const duration   = isVideo ? (source.duration ?? 0) : 0
 
@@ -63,28 +48,40 @@ export function VideoTimelineProvider({ children }) {
   const sampleRef            = useRef({})
   const fpsRef               = useRef(fps)
 
-  durationRef.current          = duration
-  tracksRef.current            = tracks
-  playingRef.current           = playing
-  loopRef.current              = loop
-  recordingRef.current         = recording
-  selectedKeyframesRef.current = selectedKeyframes
-  anchorKeyframeRef.current    = anchorKeyframe
-  fpsRef.current               = fps
+  // Mirror the latest committed state into the refs so the rAF loop and event
+  // callbacks read current values from their closures without re-subscribing.
+  useLayoutEffect(() => {
+    durationRef.current          = duration
+    tracksRef.current            = tracks
+    playingRef.current           = playing
+    loopRef.current              = loop
+    recordingRef.current         = recording
+    selectedKeyframesRef.current = selectedKeyframes
+    anchorKeyframeRef.current    = anchorKeyframe
+    fpsRef.current               = fps
+  })
 
-  // Reset everything when a new video source is loaded (or source is cleared).
-  useEffect(() => {
-    playingRef.current = false
+  // Reset all timeline state when a new video source is loaded (or cleared).
+  // Done during render (the sanctioned prop-change pattern) rather than in an
+  // effect, so the reset lands in a single commit without a cascading render.
+  // The state-mirroring refs (tracksRef/playingRef/selectedKeyframesRef) follow
+  // automatically via the sync layout-effect above.
+  const [prevSource, setPrevSource] = useState(source)
+  if (source !== prevSource) {
+    setPrevSource(source)
     setPlaying(false)
-    playheadRef.current = 0
     setPlayheadState(0)
     setTracks([])
-    tracksRef.current = []
-    sampleRef.current = {}
     setLiveSample({})
-    selectedKeyframesRef.current = new Set()
     setSelectedKeyframes(new Set())
     setAnchorKeyframe(null)
+  }
+
+  // The precise playhead/sample refs aren't mirrored from state by the sync
+  // effect, so reset them imperatively when the source changes.
+  useEffect(() => {
+    playheadRef.current = 0
+    sampleRef.current = {}
   }, [source])
 
   // rAF playback loop — advances playhead, throttles React state to fps.
@@ -95,7 +92,7 @@ export function VideoTimelineProvider({ children }) {
     const stateInterval = 1000 / 30 // state updates at most 30×/s regardless of fps setting
 
     const tick = (now) => {
-      if (prev == null) prev = now
+      if (prev === null) prev = now
       const dt = Math.min((now - prev) / 1000, 0.1) // cap dt to avoid big jumps
       prev = now
 
@@ -376,8 +373,4 @@ export function VideoTimelineProvider({ children }) {
   ])
 
   return <VideoTimelineContext.Provider {...{ value }}>{children}</VideoTimelineContext.Provider>
-}
-
-export function useVideoTimeline() {
-  return useContext(VideoTimelineContext)
 }

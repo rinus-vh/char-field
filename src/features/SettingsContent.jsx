@@ -6,11 +6,13 @@ import {
   Slider, Dropdown, Checkbox, ColorInput, GhostButton,
 } from '@6njp/prototype-library'
 
-import { useCharField, DEFAULTS, SETTINGS_SECTIONS } from '@/features/contexts/CharFieldContext.jsx'
-import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
 import { AnimatableRow } from '@/features/panels/AnimatableRow.jsx'
 import { MASK_MODE_OPTIONS } from '@/features/pipeline/maskProviders/index.js'
 import { GLYPH_SET_OPTIONS } from '@/features/pipeline/glyphSets.js'
+
+import { DEFAULTS, SETTINGS_SECTIONS } from '@/constants/charFieldDefaults.js'
+import { useCharFieldContext } from '@/contexts/CharFieldContext.jsx'
+import { useVideoTimelineContext } from '@/contexts/VideoTimelineContext.jsx'
 
 import styles from './SettingsContent.module.css'
 
@@ -37,8 +39,8 @@ function isSectionDirty(settings, section) {
 const ZOOM_DEFAULT = 1
 
 export function SettingsContent({ onOpenExport }) {
-  const { settings, update, commitSettings, resetSection, source, clearSource, effectiveTextColor, zoom, setZoom, resetZoom } = useCharField()
-  const timeline = useVideoTimeline()
+  const { settings, update, commitSettings, resetSection, source, clearSource, effectiveTextColor, zoom, setZoom, resetZoom } = useCharFieldContext()
+  const timeline = useVideoTimelineContext()
 
   // Live animated values from the timeline (undefined when no track / not video).
   // These take priority in the UI so sliders reflect what's actually rendering.

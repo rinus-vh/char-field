@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { resolveMask } from './renderPipeline.js'
 
@@ -26,28 +26,40 @@ const TARGET_FPS = 15
  *   isRendering — true while still extracting (shows overlay)
  */
 export function useVideoPrerender(source, committedMaskSettings) {
-  const [state, setState] = useState({
+  const [state, setState] = useState(() => ({
     frames:      [],
     masks:       [],
     fps:         TARGET_FPS,
     progress:    0,
-    isRendering: false,
-  })
+    isRendering: source?.kind === 'video',
+  }))
 
   const { maskMode, maskTolerance } = committedMaskSettings
 
+  // Reset to the empty state whenever an extraction input changes — the sanctioned
+  // prop-change pattern, rather than a synchronous setState inside the effect. A
+  // video source starts in the rendering state so the loading overlay shows until
+  // the first frame lands; anything else settles immediately.
+  const [prevInputs, setPrevInputs] = useState({ source, maskMode, maskTolerance })
+  if (
+    source        !== prevInputs.source ||
+    maskMode      !== prevInputs.maskMode ||
+    maskTolerance !== prevInputs.maskTolerance
+  ) {
+    setPrevInputs({ source, maskMode, maskTolerance })
+    setState({
+      frames: [], masks: [], fps: TARGET_FPS, progress: 0,
+      isRendering: source?.kind === 'video',
+    })
+  }
+
   useEffect(() => {
-    if (!source || source.kind !== 'video') {
-      setState({ frames: [], masks: [], fps: TARGET_FPS, progress: 0, isRendering: false })
-      return
-    }
+    if (!source || source.kind !== 'video') return
 
     let cancelled = false
     const fps        = TARGET_FPS
     const duration   = source.duration
     const frameCount = Math.max(1, Math.round(duration * fps))
-
-    setState({ frames: [], masks: [], fps, progress: 0, isRendering: true })
 
     ;(async () => {
       const frames = []
@@ -87,7 +99,7 @@ export function useVideoPrerender(source, committedMaskSettings) {
     })()
 
     return () => { cancelled = true }
-  }, [source, maskMode, maskTolerance]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [source, maskMode, maskTolerance])
 
   return state
 }

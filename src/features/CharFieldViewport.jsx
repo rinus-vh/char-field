@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useGesture } from '@use-gesture/react'
 import { Loader } from '@6njp/prototype-library'
 
-import { useCharField } from '@/features/contexts/CharFieldContext.jsx'
-import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
-import { useVideoPrerenderContext } from '@/features/contexts/VideoPrerenderContext.jsx'
 import { resolveMask, computeCharField } from '@/features/pipeline/renderPipeline.js'
 import { getOutputDimensions, fillBackground, buildSubjectStage } from '@/features/pipeline/OutputCompositor.js'
 import { renderGlyphs } from '@/features/pipeline/GlyphRenderer.js'
 import { CELL_ASPECT } from '@/features/pipeline/glyphGrid.js'
+
+import { useCharFieldContext } from '@/contexts/CharFieldContext.jsx'
+import { useVideoTimelineContext } from '@/contexts/VideoTimelineContext.jsx'
+import { useVideoPrerenderContext } from '@/contexts/VideoPrerenderContext.jsx'
 
 import styles from './CharFieldViewport.module.css'
 
@@ -56,8 +57,8 @@ function paintVideoFrame(canvas, frame, mask, s, fontFamily, textColor, showRaw)
 }
 
 export function CharFieldViewport() {
-  const { source, settings, committedSettings, effectiveTextColor, zoom, setZoom, resetZoom } = useCharField()
-  const videoTimeline = useVideoTimeline()
+  const { source, settings, committedSettings, effectiveTextColor, zoom, setZoom, resetZoom } = useCharFieldContext()
+  const videoTimeline = useVideoTimelineContext()
 
   // ── Non-video frame state ──────────────────────────────────────────────────
   const [frame,  setFrame]  = useState(null)
@@ -125,14 +126,17 @@ export function CharFieldViewport() {
   const showingRawRef = useRef(showingRaw)
   const fontFamilyRef = useRef(fontFamily)
 
-  tlRef.current         = videoTimeline
-  framesRef.current     = preFrames
-  masksRef.current      = preMasks
-  preFpsRef.current     = preFps
-  settingsRef.current   = settings
-  textColorRef.current  = effectiveTextColor
-  showingRawRef.current = showingRaw
-  fontFamilyRef.current = fontFamily
+  // Keep the mutable refs current for the rAF render loop without re-rendering.
+  useLayoutEffect(() => {
+    tlRef.current         = videoTimeline
+    framesRef.current     = preFrames
+    masksRef.current      = preMasks
+    preFpsRef.current     = preFps
+    settingsRef.current   = settings
+    textColorRef.current  = effectiveTextColor
+    showingRawRef.current = showingRaw
+    fontFamilyRef.current = fontFamily
+  })
 
   // ── Non-video frame acquisition ────────────────────────────────────────────
   useEffect(() => {
@@ -218,48 +222,59 @@ export function CharFieldViewport() {
   // viewport shows an instant preview before the full re-extraction fires.
   const [liveVideoMask, setLiveVideoMask] = useState(null)
 
+  // A live tweak is in progress when the working mask settings differ from the
+  // committed ones (and we're paused on a video). Derive it in render so we never
+  // need to reset state from inside the effect.
+  const liveMaskActive =
+    isVideo && !playing &&
+    (settings.maskMode !== committedSettings.maskMode ||
+     settings.maskTolerance !== committedSettings.maskTolerance)
+
   useEffect(() => {
-    const liveMaskMode  = settings.maskMode
-    const liveTolerance = settings.maskTolerance
-    const sameMaskMode  = liveMaskMode  === committedSettings.maskMode
-    const sameTolerance = liveTolerance === committedSettings.maskTolerance
-
-    if (!isVideo || playing || (sameMaskMode && sameTolerance)) {
-      setLiveVideoMask(null)
-      return
-    }
-
+    if (!liveMaskActive) return
     const frame = preFrames[videoFrameIndex] ?? null
-    if (!frame) { setLiveVideoMask(null); return }
-
+    if (!frame) return
     let active = true
-    resolveMask(frame, { maskMode: liveMaskMode, maskTolerance: liveTolerance })
+    resolveMask(frame, { maskMode: settings.maskMode, maskTolerance: settings.maskTolerance })
       .then(({ mask }) => { if (active) setLiveVideoMask(mask) })
     return () => { active = false }
   }, [
-    isVideo, playing,
+    liveMaskActive,
     settings.maskMode, settings.maskTolerance,
-    committedSettings.maskMode, committedSettings.maskTolerance,
     videoFrameIndex, preFrames,
   ])
+
+  // Only surface the live mask while a tweak is active; otherwise fall back to the
+  // committed pre-extracted mask. Gating here keeps any stale value out of play.
+  const effectiveLiveMask = liveMaskActive ? liveVideoMask : null
 
   // ── Video PAUSED / scrubbing / tweaking: single-frame paint via effect ──────
   useEffect(() => {
     if (!isVideo || playing) return
     const f = preFrames[videoFrameIndex] ?? null
     // Prefer the live-remasked version when mask settings are being tweaked.
-    const m = liveVideoMask ?? preMasks[videoFrameIndex] ?? null
+    const m = effectiveLiveMask ?? preMasks[videoFrameIndex] ?? null
     paintVideoFrame(videoCanvasRef.current, f, m, effectiveSettings, fontFamily, effectiveTextColor, showingRaw)
   }, [
-    isVideo, playing, videoFrameIndex, preFrames, preMasks, liveVideoMask,
+    isVideo, playing, videoFrameIndex, preFrames, preMasks, effectiveLiveMask,
     effectiveSettings, effectiveTextColor, showingRaw, fontFamily,
   ])
 
-  // Reset pan + zoom when image fit changes.
-  useEffect(() => { setPan({ x: 0, y: 0 }); resetZoom() }, [imageFit, resetZoom])
+  // Reset pan when image fit changes (render-time derived reset for local state).
+  const [prevImageFit, setPrevImageFit] = useState(imageFit)
+  if (imageFit !== prevImageFit) {
+    setPrevImageFit(imageFit)
+    setPan({ x: 0, y: 0 })
+  }
+  // Zoom lives in context, so its reset can't run during render — do it in an effect.
+  useEffect(() => { resetZoom() }, [imageFit, resetZoom])
 
-  // When zoom is snapped back to 1 (e.g. from settings panel), also reset pan.
-  useEffect(() => { if (zoom === 1) setPan({ x: 0, y: 0 }) }, [zoom])
+  // When zoom is snapped back to 1 (e.g. from the settings panel), also reset pan.
+  const [prevZoom, setPrevZoom] = useState(zoom)
+  if (zoom !== prevZoom) {
+    setPrevZoom(zoom)
+    if (zoom === 1) setPan({ x: 0, y: 0 })
+  }
 
   // ── Raw-input canvas for IMAGE / LIVEFEED (SVG path) ────────────────────────
   useEffect(() => {

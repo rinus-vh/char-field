@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { EyeOff, Eye, Plus, Trash2 } from 'lucide-react'
 import { PanelContainerSettingsRow, ContextMenu } from '@6njp/prototype-library'
 
-import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
+import { useVideoTimelineContext } from '@/contexts/VideoTimelineContext.jsx'
 
 import styles from './AnimatableRow.module.css'
 
@@ -22,7 +22,7 @@ import styles from './AnimatableRow.module.css'
  * underlying element it wraps.
  */
 export function AnimatableRow({ label, path, value, standalone = false, children }) {
-  const timeline = useVideoTimeline()
+  const timeline = useVideoTimelineContext()
   const track = (path && timeline) ? timeline.tracks.find(t => t.path === path) : null
 
   const [menu, setMenu] = useState(null) // { x, y }

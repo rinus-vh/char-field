@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Scissors, Pause, Play } from 'lucide-react'
-import { ActionIconButton, Button, Trim } from '@6njp/prototype-library'
+import { ActionIconButton, Button, Icon, Trim } from '@6njp/prototype-library'
 
 import { VideoFrameStrip } from '@/features/VideoFrameStrip.jsx'
 
@@ -32,7 +32,7 @@ export function VideoTrimModal({ file, duration, onConfirm, onCancel }) {
   const videoRef     = useRef(null)
   const rafRef       = useRef(null)
   const selectionRef = useRef(selection)
-  selectionRef.current = selection
+  useLayoutEffect(() => { selectionRef.current = selection })
 
   // Wire the object URL to the visible video element once per file.
   useEffect(() => {
@@ -113,10 +113,10 @@ export function VideoTrimModal({ file, duration, onConfirm, onCancel }) {
   const length = selection.end - selection.start
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.component_root}>
       <div className={styles.dialog}>
         <div className={styles.header}>
-          <Scissors size={15} className={styles.headerIcon} />
+          <Icon icon={Scissors} layoutClassName={styles.headerIconLayout} />
           <span className={styles.title}>Trim video</span>
         </div>
 

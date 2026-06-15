@@ -19,8 +19,8 @@ function parseRatio(ratio) {
 
 function getDimensions(ratio, sourceW, sourceH, longEdge) {
   const parsed = parseRatio(ratio)
-  let rw = parsed ? parsed[0] : sourceW
-  let rh = parsed ? parsed[1] : sourceH
+  const rw = parsed ? parsed[0] : sourceW
+  const rh = parsed ? parsed[1] : sourceH
   const scale = longEdge / Math.max(rw, rh)
   return {
     width: Math.max(1, Math.round(rw * scale)),

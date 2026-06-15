@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { FileUpload, GhostButton } from '@6njp/prototype-library'
 import { Video, X, CircleDot } from 'lucide-react'
 
-import { useCharField } from '@/features/contexts/CharFieldContext.jsx'
 import { CharFieldViewport } from '@/features/CharFieldViewport.jsx'
 import { VideoTrimModal } from '@/features/VideoTrimModal.jsx'
+
+import { useCharFieldContext } from '@/contexts/CharFieldContext.jsx'
 
 import styles from './ViewportContent.module.css'
 
@@ -19,7 +20,7 @@ function isVideoFile(file) {
 }
 
 export function ViewportContent() {
-  const { source, loadImageFile, loadVideoFile, loadLiveFeed, isLoading, error } = useCharField()
+  const { source, loadImageFile, loadVideoFile, loadLiveFeed, isLoading, error } = useCharFieldContext()
 
   // ── Live feed state ────────────────────────────────────────────────────────
   const [feedOpen,  setFeedOpen]  = useState(false)

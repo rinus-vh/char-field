@@ -1,42 +1,14 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { createImageInputSource, createLiveFeedInputSource, createVideoInputSource } from '@/features/pipeline/InputSource.js'
 import { autoTextColor } from '@/features/pipeline/colorUtils.js'
 
-// All tunable output settings live here so the viewport and the settings panel
-// share one source of truth. Grouped by the settings-panel section they belong
-// to, which also drives per-section reset.
-export const DEFAULTS = {
-  // Output
-  aspectRatio: '1:1',
-  imageFit: 'contain',
-  rotation: 0,
-  // Background & text
-  backgroundColor: '#f5e003',
-  textColorAuto: true,
-  textColorManual: '#000000',
-  // Masking
-  maskMode: 'auto',
-  maskTolerance: 0.18,
-  // Glyphs
-  cellSize: 12,
-  contrast: 1.4,
-  invert: false,
-  glyphSet: 'classic',
-  // Preview
-  showRawInput: false,
-}
+import { DEFAULTS, SETTINGS_SECTIONS } from '@/constants/charFieldDefaults.js'
+import { CharFieldContext } from './CharFieldContext.jsx'
 
-export const SETTINGS_SECTIONS = {
-  output: ['aspectRatio', 'imageFit', 'rotation', 'showRawInput'],
-  color: ['backgroundColor', 'textColorAuto', 'textColorManual'],
-  masking: ['maskMode', 'maskTolerance'],
-  glyphs: ['cellSize', 'contrast', 'invert', 'glyphSet'],
-}
+const ZOOM_DEFAULT = 1
 
-const CharFieldContext = createContext(null)
-
-export function CharFieldProvider({ children }) {
+export function CharFieldContextProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULTS)
   // committedSettings is a snapshot taken when the user finishes interacting with a
   // control (pointer-up on a slider, or instantly for toggles/dropdowns). The
@@ -44,7 +16,9 @@ export function CharFieldProvider({ children }) {
   // rather than re-rendering on every intermediate value while dragging.
   const [committedSettings, setCommittedSettings] = useState(DEFAULTS)
   const settingsRef = useRef(settings)
-  settingsRef.current = settings
+  // Keep the ref in sync with the latest committed render so commitSettings() reads
+  // current settings from event callbacks (which always fire after this effect).
+  useLayoutEffect(() => { settingsRef.current = settings })
   // extraPatch lets callers forward a patch that hasn't resolved through React
   // state yet (e.g. the same patch just passed to update()). Without it,
   // settingsRef.current still holds the pre-update value at call time.
@@ -56,8 +30,6 @@ export function CharFieldProvider({ children }) {
   }, [])
 
   // Viewport zoom — lives here so the settings panel can read/write it.
-  // Pan (x/y) stays local to the viewport since the settings panel doesn't need it.
-  const ZOOM_DEFAULT = 1
   const [zoom, setZoom] = useState(ZOOM_DEFAULT)
   const resetZoom = useCallback(() => setZoom(ZOOM_DEFAULT), [])
 
@@ -82,9 +54,6 @@ export function CharFieldProvider({ children }) {
 
   const resetAll = useCallback(() => setSettings(DEFAULTS), [])
 
-  // Loads an uploaded image as the active input source. The pipeline downstream
-  // only sees the resulting InputSource, so swapping in video/live later means
-  // calling a different factory here — nothing else changes.
   const loadImageFile = useCallback(async (file) => {
     setIsLoading(true)
     setError(null)
@@ -154,10 +123,4 @@ export function CharFieldProvider({ children }) {
   }), [settings, committedSettings, update, commitSettings, resetSection, resetAll, zoom, setZoom, resetZoom, source, sourceName, isLoading, error, loadImageFile, loadLiveFeed, loadVideoFile, clearSource, effectiveTextColor])
 
   return <CharFieldContext.Provider {...{ value }}>{children}</CharFieldContext.Provider>
-}
-
-export function useCharField() {
-  const ctx = useContext(CharFieldContext)
-  if (!ctx) throw new Error('useCharField must be used within CharFieldProvider')
-  return ctx
 }

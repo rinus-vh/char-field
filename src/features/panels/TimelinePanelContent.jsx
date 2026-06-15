@@ -1,17 +1,16 @@
 import { SettingsKeyframeTimeline } from '@6njp/prototype-library'
 
-import { useVideoTimeline } from '@/features/contexts/VideoTimelineContext.jsx'
-import { useCharField } from '@/features/contexts/CharFieldContext.jsx'
-import { DEFAULTS } from '@/features/contexts/CharFieldContext.jsx'
+import { useVideoTimelineContext } from '@/contexts/VideoTimelineContext.jsx'
+import { useCharFieldContext } from '@/contexts/CharFieldContext.jsx'
 
 export function TimelinePanelContent() {
   const {
     tracks, playhead, playheadRef, playing, loop, fps, duration, recording, selectedKeyframes,
     toggle, pause, setLoop, setRecording, setPlayhead, setTrackMuted, clearAllTracks,
     selectKeyframe, moveSelectedKeyframes, selectKeyframesInBox, clearSelection, setFps,
-  } = useVideoTimeline()
+  } = useVideoTimelineContext()
 
-  const { resetAll } = useCharField()
+  const { resetAll } = useCharFieldContext()
 
   function handleClearAll() {
     clearAllTracks()
