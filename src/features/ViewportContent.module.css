@@ -31,57 +31,10 @@
 
 /* Live feed modal */
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--color-black) 60%, transparent);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog {
+.feedModalContent {
   display: flex;
   flex-direction: column;
-  gap: var(--size-16);
-  background: var(--background-color, #1a1a1a);
-  border: 1px solid color-mix(in srgb, var(--color) 15%, transparent);
-  border-radius: var(--radius-8);
-  padding: var(--size-20);
-  width: min(90vw, 560px);
-}
-
-.dialogHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.dialogTitle {
-  font-size: var(--font-size-14);
-  font-weight: 600;
-  opacity: 0.8;
-}
-
-.closeButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-4);
-  border: none;
-  background: none;
-  color: var(--color);
-  cursor: pointer;
-  opacity: 0.5;
-  transition: opacity var(--duration-100);
-
-  &:hover {
-    opacity: 1;
-  }
+  gap: var(--size-12);
 }
 
 .video {
@@ -91,26 +44,8 @@
   display: block;
 }
 
-.dialogFooter {
-  display: flex;
-  justify-content: center;
-}
-
-.startButton {
-  display: flex;
-  align-items: center;
-  gap: var(--size-8);
-  padding: var(--size-8) var(--size-24);
-  border-radius: var(--radius-4);
-  border: none;
-  background: var(--color);
-  color: var(--background-color, #1a1a1a);
-  font-size: var(--font-size-13);
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity var(--duration-150);
-
-  &:hover {
-    opacity: 0.85;
+.feedModalContent {
+  & > .startButtonLayout {
+    width: 100%;
   }
 }

@@ -258,7 +258,7 @@ export function SettingsContent({ onOpenExport }) {
           <GhostButton
             label='Discard image'
             icon={ImageOff}
-            color='orange'
+            color='dynamic'
             onClick={clearSource}
             layoutClassName={styles.fullButtonLayout}
           />

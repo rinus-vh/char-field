@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { FileUpload, GhostButton } from '@6njp/prototype-library'
-import { Video, X, CircleDot } from 'lucide-react'
+import { useState } from 'react'
+import { FileUpload, GhostButton, Modal } from '@6njp/prototype-library'
+import { Video, CircleDot } from 'lucide-react'
 
 import { CharFieldViewport } from '@/features/CharFieldViewport.jsx'
 import { VideoTrimModal } from '@/features/VideoTrimModal.jsx'
@@ -26,7 +26,9 @@ export function ViewportContent() {
   const [feedOpen,  setFeedOpen]  = useState(false)
   const [stream,    setStream]    = useState(null)
   const [feedError, setFeedError] = useState(null)
-  const videoRef = useRef(null)
+  function videoRef(el) {
+    if (el && stream) el.srcObject = stream
+  }
 
   // ── Video trim state ───────────────────────────────────────────────────────
   const [pendingVideo,   setPendingVideo]  = useState(null) // { file, duration }
@@ -86,9 +88,6 @@ export function ViewportContent() {
     setFeedOpen(false)
   }
 
-  useEffect(() => {
-    if (videoRef.current && stream) videoRef.current.srcObject = stream
-  }, [stream, feedOpen])
 
   if (!source) {
     const anyError = error ?? feedError ?? videoLoadError
@@ -115,31 +114,24 @@ export function ViewportContent() {
           {anyError && <span className={styles.error}>{anyError}</span>}
         </div>
 
-        {feedOpen && (
-          <div className={styles.overlay}>
-            <div className={styles.dialog}>
-              <div className={styles.dialogHeader}>
-                <span className={styles.dialogTitle}>Live feed preview</span>
-                <button type='button' onClick={closeFeed} className={styles.closeButton}>
-                  <X size={16} />
-                </button>
-              </div>
-              <video
-                autoPlay
-                playsInline
-                muted
-                ref={videoRef}
-                className={styles.video}
-              />
-              <div className={styles.dialogFooter}>
-                <button type='button' onClick={startFeed} className={styles.startButton}>
-                  <CircleDot size={15} />
-                  <span>Use live feed</span>
-                </button>
-              </div>
-            </div>
+        <Modal isOpen={feedOpen} onClose={closeFeed} title='Live feed preview'>
+          <div className={styles.feedModalContent}>
+            <video
+              autoPlay
+              playsInline
+              muted
+              ref={videoRef}
+              className={styles.video}
+            />
+            <GhostButton
+              label='Use live feed'
+              icon={CircleDot}
+              color='dynamic'
+              onClick={startFeed}
+              layoutClassName={styles.startButtonLayout}
+            />
           </div>
-        )}
+        </Modal>
 
         {pendingVideo && (
           <VideoTrimModal
