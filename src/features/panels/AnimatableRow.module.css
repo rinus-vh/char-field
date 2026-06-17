@@ -22,7 +22,7 @@
   width: 6px;
   height: 6px;
   border-radius: var(--radius-circle);
-  background-color: var(--interaction-color);
+  background-color: var(--dynamic-color);
   border: none;
   cursor: pointer;
   padding: 0;

@@ -118,7 +118,7 @@
 
 .prerenderBarFill {
   height: 100%;
-  background: var(--interaction-color, #60a5fa);
+  background: var(--dynamic-color, #60a5fa);
   border-radius: 99px;
   transition: width 0.1s linear;
 }
